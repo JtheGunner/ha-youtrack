@@ -101,7 +101,7 @@ async def test_query_sensor_state_and_attributes(
         "url": f"{URL}/issue/DEMO-2",
     }
     assert len(state.attributes["issues"]) == 2
-    mock_client.get_issues.assert_awaited_with("project: {DEMO} and (for: me #Unresolved)", top=10)
+    mock_client.get_issues.assert_any_await("project: {DEMO} and (for: me #Unresolved)", top=10)
 
 
 async def test_long_summaries_are_truncated(hass: HomeAssistant, mock_client: MagicMock) -> None:
@@ -241,7 +241,7 @@ async def test_edit_query(hass: HomeAssistant, mock_client: MagicMock) -> None:
     assert stored[CONF_QUERY_ID] == "q1"
     assert stored[CONF_QUERY_TEXT] == "#Resolved"
     assert stored[CONF_QUERY_TOP] == 3
-    mock_client.get_issues.assert_awaited_with("project: {DEMO} and (#Resolved)", top=3)
+    mock_client.get_issues.assert_any_await("project: {DEMO} and (#Resolved)", top=3)
 
 
 async def test_edit_query_rejected(hass: HomeAssistant, mock_client: MagicMock) -> None:

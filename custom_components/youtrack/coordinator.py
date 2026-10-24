@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_PROJECT_ID,
@@ -26,6 +27,7 @@ from .exceptions import (
     YouTrackPermissionError,
     YouTrackRateLimitError,
 )
+from .issue_cache import IssueCache
 from .queries import COUNT_QUERIES, DUE_DATE_FIELD_NAMES, CountQuery, CustomQuery
 
 if TYPE_CHECKING:
@@ -54,6 +56,7 @@ class ProjectData:
 
     counts: Mapping[str, int | None]
     queries: Mapping[str, QueryResult]
+    open_issues: Mapping[str, Issue]
 
 
 class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
@@ -73,6 +76,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self._field_names: set[str] | None = None
         self._due_field: str | None = None
         self._invalid_queries: set[str] = set()
+        self._cache = IssueCache(self._client, self.project_key, dt_util.get_default_time_zone())
         self.custom_queries: tuple[CustomQuery, ...] = tuple(
             CustomQuery.from_data(item) for item in subentry.data.get(CONF_QUERIES, ())
         )
@@ -160,9 +164,10 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             if self._field_names is None:
                 await self._load_fields()
             queries = self._supported_queries()
-            values, results = await asyncio.gather(
+            values, results, _ = await asyncio.gather(
                 asyncio.gather(*(self._count(query) for query in queries)),
                 asyncio.gather(*(self._run_custom(query) for query in self.custom_queries)),
+                self._cache.refresh(dt_util.utcnow()),
             )
         except (YouTrackAuthError, YouTrackPermissionError) as err:
             raise ConfigEntryAuthFailed("YouTrack rejected the stored token") from err
@@ -183,4 +188,5 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
                 for query, value in zip(queries, values, strict=True)
             },
             queries={key: result for key, result in custom.items() if result is not None},
+            open_issues=dict(self._cache.issues),
         )
