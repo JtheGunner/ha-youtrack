@@ -26,7 +26,7 @@
 | 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | ✅ available |
 | 📚 | Knowledge base: article count and latest change per project | ✅ available |
-| 🔍 | Knowledge base: search and read articles from automations | 🛠 planned |
+| 🔍 | Knowledge base: search and read articles from automations | ✅ available |
 
 Each YouTrack instance is set up once; every project you add becomes its own device.
 
@@ -96,6 +96,8 @@ the issue entities, when the token may not read articles.
 | `youtrack.transition` | `issue_id`, `state`, `field` (default `State`) | |
 | `youtrack.assign` | `issue_id`, `assignee` (login) | |
 | `youtrack.log_work` | `issue_id`, `duration` (`1h 30m`), `text`, `date`, `work_type` | Units: `w`, `d`, `h`, `m`. |
+| `youtrack.search_articles` | `query`, `device_id` (limit to a project), `limit` (1–50, default 10) | Response only. Returns `articles` with `id`, `title`, `project`, `author`, `updated`, `url`. |
+| `youtrack.get_article` | `article_id` (`DEMO-A-12`), `max_length` (default 4000) | Response only. Returns the metadata plus Markdown `content` and `truncated`. |
 
 `device_id` is optional for the issue actions as long as only one YouTrack instance is set up; otherwise pick
 any project of the instance you mean. Type, priority, state and assignee are applied with YouTrack

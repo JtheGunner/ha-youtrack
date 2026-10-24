@@ -316,6 +316,42 @@
           "description": "Only needed with more than one YouTrack instance: any project of the instance."
         }
       }
+    },
+    "search_articles": {
+      "name": "Search articles",
+      "description": "Searches the knowledge base and returns matching articles without their content.",
+      "fields": {
+        "query": {
+          "name": "Search",
+          "description": "A YouTrack article search, for example a word from the title."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Limit the search to one project. Without it, all projects of the instance are searched."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "The maximum number of articles to return."
+        }
+      }
+    },
+    "get_article": {
+      "name": "Get article",
+      "description": "Returns an article including its Markdown content.",
+      "fields": {
+        "article_id": {
+          "name": "Article ID",
+          "description": "The ID of the article, for example DEMO-A-12."
+        },
+        "max_length": {
+          "name": "Maximum length",
+          "description": "Content beyond this many characters is cut off and reported as truncated."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Only needed with more than one YouTrack instance: any project of the instance."
+        }
+      }
     }
   },
   "exceptions": {
@@ -347,7 +383,7 @@
       "message": "YouTrack denied the request. The token's user lacks permission for this action."
     },
     "not_found": {
-      "message": "YouTrack could not find that issue or project."
+      "message": "YouTrack could not find that issue, project or article."
     },
     "rejected": {
       "message": "YouTrack rejected the request: {reason}"
@@ -363,6 +399,9 @@
     },
     "empty_summary": {
       "message": "An issue needs a summary."
+    },
+    "invalid_article_id": {
+      "message": "The article ID \"{article_id}\" is not valid."
     }
   }
 }

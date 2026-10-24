@@ -316,6 +316,42 @@
           "description": "Nur bei mehreren YouTrack-Instanzen nötig: ein beliebiges Projekt der Instanz."
         }
       }
+    },
+    "search_articles": {
+      "name": "Artikel suchen",
+      "description": "Durchsucht die Wissensdatenbank und liefert passende Artikel ohne Inhalt.",
+      "fields": {
+        "query": {
+          "name": "Suche",
+          "description": "Eine YouTrack-Artikelsuche, zum Beispiel ein Wort aus dem Titel."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Beschränkt die Suche auf ein Projekt. Ohne Angabe werden alle Projekte der Instanz durchsucht."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "Die maximale Anzahl zurückgegebener Artikel."
+        }
+      }
+    },
+    "get_article": {
+      "name": "Artikel abrufen",
+      "description": "Liefert einen Artikel samt Markdown-Inhalt.",
+      "fields": {
+        "article_id": {
+          "name": "Artikel-ID",
+          "description": "Die ID des Artikels, zum Beispiel DEMO-A-12."
+        },
+        "max_length": {
+          "name": "Maximale Länge",
+          "description": "Inhalt über dieser Zeichenzahl wird abgeschnitten und als gekürzt gemeldet."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Nur bei mehr als einer YouTrack-Instanz nötig: ein beliebiges Projekt der Instanz."
+        }
+      }
     }
   },
   "exceptions": {
@@ -347,7 +383,7 @@
       "message": "YouTrack hat die Anfrage abgelehnt. Dem Benutzer des Tokens fehlt die Berechtigung."
     },
     "not_found": {
-      "message": "YouTrack hat dieses Ticket oder Projekt nicht gefunden."
+      "message": "YouTrack hat dieses Ticket, Projekt oder diesen Artikel nicht gefunden."
     },
     "rejected": {
       "message": "YouTrack hat die Anfrage abgelehnt: {reason}"
@@ -363,6 +399,9 @@
     },
     "empty_summary": {
       "message": "Ein Ticket braucht einen Titel."
+    },
+    "invalid_article_id": {
+      "message": "Die Artikel-ID „{article_id}“ ist ungültig."
     }
   }
 }

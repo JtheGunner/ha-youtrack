@@ -108,3 +108,41 @@ log_work:
       selector:
         device:
           integration: youtrack
+
+search_articles:
+  fields:
+    query:
+      required: true
+      example: heating manual
+      selector:
+        text:
+    device_id:
+      selector:
+        device:
+          integration: youtrack
+    limit:
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 50
+          mode: box
+
+get_article:
+  fields:
+    article_id:
+      required: true
+      example: DEMO-A-12
+      selector:
+        text:
+    max_length:
+      default: 4000
+      selector:
+        number:
+          min: 100
+          max: 50000
+          mode: box
+    device_id:
+      selector:
+        device:
+          integration: youtrack
