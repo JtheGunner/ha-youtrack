@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A calendar per project with the due dates of unresolved issues, for projects that have a `Due Date` field.
+
 ## [1.0.0] - 2026-10-24
 
 First stable release: the entities, actions and options are now covered by semantic versioning.

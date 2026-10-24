@@ -36,3 +36,6 @@ DEFAULT_REOPENED_STATE = "Open"
 
 KB_INTERVAL_FACTOR = 6  # the knowledge base is polled this many times slower than issues
 KB_RECENT_ARTICLES = 5
+
+# Names (lower case) under which projects usually keep the date issues are due.
+DUE_DATE_FIELD_NAMES = frozenset({"due date", "due"})
