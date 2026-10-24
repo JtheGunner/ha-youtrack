@@ -6,17 +6,37 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
 import probatio
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigEntryState,
+    ConfigFlow,
+    ConfigFlowResult,
+    ConfigSubentryFlow,
+    SubentryFlowResult,
+)
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
 )
 
 from .api import YouTrackClient, normalize_base_url
-from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL, DOMAIN
+from .const import (
+    CONF_API_TOKEN,
+    CONF_PROJECT_ID,
+    CONF_PROJECT_KEY,
+    CONF_URL,
+    CONF_VERIFY_SSL,
+    DOMAIN,
+    SUBENTRY_PROJECT,
+)
 from .exceptions import (
     YouTrackAuthError,
     YouTrackConnectionError,
@@ -27,6 +47,8 @@ from .exceptions import (
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+
+    from .data import YouTrackConfigEntry
 
 USER_SCHEMA = probatio.Schema(
     {
@@ -67,6 +89,15 @@ class YouTrackConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls,
+        config_entry: ConfigEntry,  # noqa: ARG003
+    ) -> dict[str, type[ConfigSubentryFlow]]:
+        """Projects are added as subentries of the instance entry."""
+        return {SUBENTRY_PROJECT: ProjectSubentryFlowHandler}
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Ask for URL and token and verify them."""
         errors: dict[str, str] = {}
@@ -95,4 +126,48 @@ class YouTrackConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
             errors=errors,
+        )
+
+
+class ProjectSubentryFlowHandler(ConfigSubentryFlow):
+    """Add a YouTrack project to an instance."""
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        """Let the user pick one of the projects that are not added yet."""
+        entry: YouTrackConfigEntry = self._get_entry()
+        if entry.state is not ConfigEntryState.LOADED:
+            return self.async_abort(reason="entry_not_loaded")
+        try:
+            projects = await entry.runtime_data.client.get_projects()
+        except YouTrackError:
+            return self.async_abort(reason="cannot_connect")
+
+        added = {subentry.unique_id for subentry in entry.subentries.values()}
+        available = {p.id: p for p in projects if not p.archived and p.id not in added}
+        if not available:
+            return self.async_abort(reason="no_projects_available")
+
+        if user_input is not None:
+            project = available.get(user_input[CONF_PROJECT_ID])
+            if project is None:
+                return self.async_abort(reason="project_unavailable")
+            return self.async_create_entry(
+                title=project.name,
+                data={CONF_PROJECT_ID: project.id, CONF_PROJECT_KEY: project.short_name},
+                unique_id=project.id,
+            )
+
+        options = [
+            SelectOptionDict(value=project.id, label=f"{project.name} ({project.short_name})")
+            for project in sorted(available.values(), key=lambda p: p.name.lower())
+        ]
+        return self.async_show_form(
+            step_id="user",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(CONF_PROJECT_ID): SelectSelector(
+                        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+                    )
+                }
+            ),
         )
