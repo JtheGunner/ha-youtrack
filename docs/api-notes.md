@@ -76,17 +76,13 @@ as the stable subentry unique ID; `shortName` can be renamed.
 
 ## Knowledge base articles
 
-> **Shapes are not verified against a live instance.** The test instance has no articles and creating one
-> was not done to avoid changing real data. The client reads `idReadable`, `summary`, `created`, `updated`,
-> `project(shortName)`, `reporter(login)`, `parentArticle(idReadable)`, `hasChildren` and `content` as described
-> in the YouTrack REST reference; the fixtures in `tests/fixtures/api/articles.json` and `article.json` are
-> written from that reference, not recorded. The endpoint itself answers `200` (verified), but it also accepts
-> unknown field names while there are no articles, so the projection could not be validated either.
-> Counting has no endpoint and is done by paging (capped).
+Verified against a project with a root article and two child articles.
 
-`GET /api/articles?fields=idReadable,summary,updated,project(shortName),parentArticle(idReadable)&$top=n` and
-`?query=<text>` answered `200` with `[]`. The test instance has **no articles**, so the field shapes (content,
-hierarchy, attachments) are **unverified**. T20 must create a throwaway article first and record fixtures.
+- `GET /api/articles?query=project: {KEY}` returns exactly that project's articles; the same scoping form
+  `project: {KEY} and (<text>)` works for article searches.
+- The list fields `id,idReadable,summary,created,updated,project(shortName),reporter(login),parentArticle(idReadable),hasChildren`
+  and `content` on a single article parse as modelled (`idReadable` looks like `KEY-A-1`).
+- There is no count endpoint, so counting means reading pages (capped by the integration).
 
 ## Rate limits and errors
 
@@ -150,7 +146,10 @@ Verified live:
   `Priority Major Type Feature` work. Quotes and braces are **not** accepted in command values
   (`State {In Progress}` fails with `State expected: {In Progress}`), values with spaces are written bare.
   Invalid commands answer `400` with `error_description` (`Unknown command: ...`).
-- Unverified (not run against the live instance to avoid changing real data): `POST /api/issues` with
-  `{project: {id}, summary, description}`, `POST /api/issues/{id}/comments`,
-  `POST /api/issues/{id}/timeTracking/workItems` with `{duration: {presentation}, text, date, type: {name}}`,
-  and `Assignee Unassigned` to clear the assignee.
+- Verified on a throwaway project: `POST /api/issues` with `{project: {id}, summary, description}`,
+  `POST /api/issues/{id}/comments`, `Assignee Unassigned` to clear the assignee, and
+  `POST /api/issues/{id}/timeTracking/workItems`. Work items answer `403` until time tracking is enabled in the
+  project.
+- Date fields (`Due Date`) hold epoch milliseconds of the due day; the overdue query
+  `{Due Date}: * .. {minus 1d}` counts unresolved issues past their date, and `tag:` and `issue id: A-1, A-2`
+  searches work inside the project scope.
