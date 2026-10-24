@@ -19,6 +19,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    DUE_DATE_FIELD_NAMES,
     EVENT_PREFIX,
 )
 from .exceptions import (
@@ -29,7 +30,7 @@ from .exceptions import (
     YouTrackRateLimitError,
 )
 from .issue_cache import IssueCache
-from .queries import COUNT_QUERIES, DUE_DATE_FIELD_NAMES, CountQuery, CustomQuery
+from .queries import COUNT_QUERIES, CountQuery, CustomQuery
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -109,6 +110,11 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
                 minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
             ),
         )
+
+    @property
+    def due_field(self) -> str | None:
+        """Return the name of the project's due date field, if it has one."""
+        return self._due_field
 
     @property
     def active_counts(self) -> list[str]:

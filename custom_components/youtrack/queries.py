@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 ASSIGNEE_FIELD = "Assignee"
 PRIORITY_FIELD = "Priority"
-DUE_DATE_FIELD_NAMES = frozenset({"due date", "due"})
 
 
 @dataclass(frozen=True, slots=True)

@@ -55,6 +55,11 @@
       "open_issues": {
         "default": "mdi:format-list-checks"
       }
+    },
+    "calendar": {
+      "due_dates": {
+        "default": "mdi:calendar-clock"
+      }
     }
   },
   "services": {

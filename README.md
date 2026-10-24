@@ -102,6 +102,7 @@ are not created.
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
 | 📚 | Articles | Knowledge base articles of the project (`capped` attribute is `true` above 2000) | read access to articles |
+| 📅 | Due dates (calendar) | Unresolved issues as all-day events on their due date, with the next one as state | a date field named `Due Date` or `Due` |
 | 🕑 | Last updated article | When an article last changed. Attributes: `id`, `title`, `author`, `url`, `recent` (latest five) | as above |
 
 Knowledge base entities refresh at a sixth of the issue polling rate and stay unavailable, without affecting

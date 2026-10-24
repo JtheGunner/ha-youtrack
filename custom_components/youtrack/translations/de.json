@@ -200,6 +200,11 @@
       "open_issues": {
         "name": "Offene Tickets"
       }
+    },
+    "calendar": {
+      "due_dates": {
+        "name": "Fälligkeiten"
+      }
     }
   },
   "services": {

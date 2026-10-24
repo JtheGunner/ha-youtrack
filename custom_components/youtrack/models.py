@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
+from .const import DUE_DATE_FIELD_NAMES
 from .exceptions import YouTrackResponseError
 
 
@@ -91,6 +92,14 @@ class ProjectField:
         return cls(name=_require_str(field, "name"), field_type=type_id or "")
 
 
+def _due_date(fields: dict[str, Any]) -> datetime | None:
+    """Return the value of the due date field, which holds epoch milliseconds."""
+    for name, value in fields.items():
+        if name.lower() in DUE_DATE_FIELD_NAMES and isinstance(value, int | float):
+            return _timestamp(value)
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class Issue:
     """A YouTrack issue reduced to the fields this integration uses."""
@@ -106,6 +115,7 @@ class Issue:
     priority: str | None
     type: str | None
     assignee: str | None
+    due: datetime | None = None
 
     @property
     def is_resolved(self) -> bool:
@@ -133,6 +143,7 @@ class Issue:
             priority=_field_value_name(fields.get("Priority")),
             type=_field_value_name(fields.get("Type")),
             assignee=_field_value_name(fields.get("Assignee")),
+            due=_due_date(fields),
         )
 
 
