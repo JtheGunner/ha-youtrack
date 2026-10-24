@@ -1,0 +1,41 @@
+# Looks up a topic in the YouTrack knowledge base and sends the best match as a notification.
+# Add it to scripts.yaml (or paste it into the script editor in YAML mode) and replace
+# notify.notify with your notification service.
+youtrack_knowledge_base_lookup:
+  alias: Look up a YouTrack article
+  description: Searches the knowledge base and notifies with the first matching article.
+  fields:
+    topic:
+      name: Topic
+      description: What to search for.
+      required: true
+      example: heating manual
+      selector:
+        text:
+  sequence:
+    - action: youtrack.search_articles
+      data:
+        query: "{{ topic }}"
+        limit: 1
+      response_variable: found
+    - if:
+        - condition: template
+          value_template: "{{ found.articles | count == 0 }}"
+      then:
+        - action: notify.notify
+          data:
+            message: "No article found for {{ topic }}."
+        - stop: No article found
+    - action: youtrack.get_article
+      data:
+        article_id: "{{ found.articles[0].id }}"
+        max_length: 600
+      response_variable: article
+    - action: notify.notify
+      data:
+        title: "{{ article.title }}"
+        message: >-
+          {{ article.content }}{% if article.truncated %} …{% endif %}
+
+          {{ article.url }}
+  mode: queued
