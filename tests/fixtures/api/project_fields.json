@@ -1,0 +1,6 @@
+[
+  {"field":{"name":"Priority","fieldType":{"id":"enum[1]"}}},
+  {"field":{"name":"State","fieldType":{"id":"state[1]"}}},
+  {"field":{"name":"Assignee","fieldType":{"id":"user[1]"}}},
+  {"field":{"name":"Due Date","fieldType":{"id":"date"}}}
+]

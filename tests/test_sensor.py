@@ -17,7 +17,7 @@ from custom_components.youtrack.exceptions import (
     YouTrackRateLimitError,
 )
 
-from .conftest import URL
+from .conftest import URL, fake_count
 
 TOTAL = "sensor.demo_project_issues"
 
@@ -43,7 +43,7 @@ async def test_project_device_and_sensor(
 
     assert mock_project_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(TOTAL).state == "42"  # type: ignore[union-attr]
-    mock_client.count_issues.assert_awaited_with("project: {DEMO}")
+    mock_client.count_issues.assert_any_await("project: {DEMO}")
 
     device = dr.async_get(hass).async_get_device_by_identifier(
         (DOMAIN, f"{mock_project_entry.entry_id}_0-1"), mock_project_entry.entry_id
@@ -76,6 +76,7 @@ async def test_values_refresh_on_poll(
 ) -> None:
     """A later poll updates the state."""
     await _setup(hass, mock_project_entry)
+    mock_client.count_issues.side_effect = None
     mock_client.count_issues.return_value = 43
 
     await _refresh(hass, mock_project_entry)
@@ -95,7 +96,7 @@ async def test_unavailable_and_recovery(
     await _refresh(hass, mock_project_entry)
     assert hass.states.get(TOTAL).state == STATE_UNAVAILABLE  # type: ignore[union-attr]
 
-    mock_client.count_issues.side_effect = None
+    mock_client.count_issues.side_effect = fake_count
     await _refresh(hass, mock_project_entry)
     assert hass.states.get(TOTAL).state == "42"  # type: ignore[union-attr]
 
@@ -135,6 +136,7 @@ async def test_pending_count_keeps_previous_value(
 ) -> None:
     """A count that YouTrack has not computed yet does not wipe the known value."""
     await _setup(hass, mock_project_entry)
+    mock_client.count_issues.side_effect = None
     mock_client.count_issues.return_value = None
 
     await _refresh(hass, mock_project_entry)
@@ -146,6 +148,7 @@ async def test_pending_count_on_first_refresh_is_unknown(
     hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
 ) -> None:
     """Without a previous value the sensor reports unknown."""
+    mock_client.count_issues.side_effect = None
     mock_client.count_issues.return_value = None
 
     await _setup(hass, mock_project_entry)

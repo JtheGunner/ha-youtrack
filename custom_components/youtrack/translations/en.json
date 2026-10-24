@@ -85,6 +85,35 @@
     "sensor": {
       "issues_total": {
         "name": "Issues"
+      },
+      "issues_open": {
+        "name": "Open issues"
+      },
+      "issues_resolved": {
+        "name": "Resolved issues"
+      },
+      "issues_unassigned": {
+        "name": "Unassigned issues"
+      },
+      "issues_overdue": {
+        "name": "Overdue issues"
+      },
+      "issues_created_7d": {
+        "name": "Created in the last 7 days"
+      },
+      "issues_resolved_7d": {
+        "name": "Resolved in the last 7 days"
+      },
+      "issues_critical_open": {
+        "name": "Critical open issues"
+      }
+    },
+    "binary_sensor": {
+      "has_overdue": {
+        "name": "Has overdue issues"
+      },
+      "has_critical_open": {
+        "name": "Has critical open issues"
       }
     }
   }

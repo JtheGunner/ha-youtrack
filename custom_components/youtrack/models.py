@@ -72,6 +72,24 @@ class Project:
 
 
 @dataclass(frozen=True, slots=True)
+class ProjectField:
+    """A custom field that is attached to a project."""
+
+    name: str
+    field_type: str
+
+    @classmethod
+    def from_json(cls, payload: dict[str, Any]) -> ProjectField:
+        """Build a project field from an API payload."""
+        field = payload.get("field")
+        if not isinstance(field, dict):
+            raise YouTrackResponseError("Missing 'field' in project custom field")
+        field_type = field.get("fieldType")
+        type_id = field_type.get("id") if isinstance(field_type, dict) else None
+        return cls(name=_require_str(field, "name"), field_type=type_id or "")
+
+
+@dataclass(frozen=True, slots=True)
 class Issue:
     """A YouTrack issue reduced to the fields this integration uses."""
 

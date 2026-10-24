@@ -16,8 +16,3 @@ CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 5  # minutes
 MIN_SCAN_INTERVAL = 1
 MAX_SCAN_INTERVAL = 60
-
-# Count queries per project; "{project}" is replaced by the project short name.
-COUNT_QUERIES: dict[str, str] = {
-    "total": "project: {{{project}}}",
-}

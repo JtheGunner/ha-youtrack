@@ -21,7 +21,7 @@ from .exceptions import (
     YouTrackRateLimitError,
     YouTrackResponseError,
 )
-from .models import Issue, Project, ServerInfo, User
+from .models import Issue, Project, ProjectField, ServerInfo, User
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -114,6 +114,16 @@ class YouTrackClient:
             if len(page) < PAGE_SIZE:
                 return projects
             skip += PAGE_SIZE
+
+    async def get_project_fields(self, project_id: str) -> list[ProjectField]:
+        """Return the custom fields attached to a project."""
+        data = await self._get_json(
+            f"/api/admin/projects/{project_id}/customFields",
+            {"fields": "field(name,fieldType(id))", "$top": PAGE_SIZE},
+        )
+        if not isinstance(data, list):
+            raise YouTrackResponseError("Expected a list of project fields")
+        return [ProjectField.from_json(item) for item in data]
 
     async def count_issues(self, query: str) -> int | None:
         """Count issues matching ``query``.

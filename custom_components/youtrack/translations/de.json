@@ -85,6 +85,35 @@
     "sensor": {
       "issues_total": {
         "name": "Tickets"
+      },
+      "issues_open": {
+        "name": "Offene Tickets"
+      },
+      "issues_resolved": {
+        "name": "Gelöste Tickets"
+      },
+      "issues_unassigned": {
+        "name": "Nicht zugewiesene Tickets"
+      },
+      "issues_overdue": {
+        "name": "Überfällige Tickets"
+      },
+      "issues_created_7d": {
+        "name": "In den letzten 7 Tagen erstellt"
+      },
+      "issues_resolved_7d": {
+        "name": "In den letzten 7 Tagen gelöst"
+      },
+      "issues_critical_open": {
+        "name": "Kritische offene Tickets"
+      }
+    },
+    "binary_sensor": {
+      "has_overdue": {
+        "name": "Hat überfällige Tickets"
+      },
+      "has_critical_open": {
+        "name": "Hat kritische offene Tickets"
       }
     }
   }
