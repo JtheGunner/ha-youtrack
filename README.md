@@ -310,6 +310,7 @@ The integration polls; it does not need webhooks or a plugin on the server. With
   token lost access). The other projects keep working. Confirm the repair to remove the project, or restore
   access and reload the integration; the repair then disappears. Renamed projects are picked up automatically.
 - **Expired or revoked token** – Home Assistant asks for a new token (reauthentication) on the integration page.
+- **Logging work fails with a permission error** – enable time tracking in the project's settings in YouTrack.
 - **Diagnostics** – download them from the integration page; the token and address are redacted.
 - **Logs** – add `custom_components.youtrack: debug` under `logger:` in `configuration.yaml`. Remove tokens
   before sharing logs.
