@@ -9,9 +9,12 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.youtrack.api import YouTrackClient
 from custom_components.youtrack.const import (
     CONF_API_TOKEN,
+    CONF_PROJECT_ID,
+    CONF_PROJECT_KEY,
     CONF_URL,
     CONF_VERIFY_SSL,
     DOMAIN,
+    SUBENTRY_PROJECT,
 )
 from custom_components.youtrack.models import Project, ServerInfo, User
 
@@ -31,6 +34,7 @@ def mock_client() -> Generator[MagicMock]:
     client = client_class.return_value
     client.get_server_info.return_value = ServerInfo(version="2026.2", build="1")
     client.get_current_user.return_value = User(login="example.user", name="Example User")
+    client.count_issues.return_value = 42
     client.get_projects.return_value = [
         Project(id="0-1", name="Demo Project", short_name="DEMO", archived=False),
         Project(id="0-2", name="Operations", short_name="OPS", archived=False),
@@ -51,4 +55,24 @@ def mock_config_entry() -> MockConfigEntry:
         title="yt.example.com",
         unique_id=URL,
         data={CONF_URL: URL, CONF_API_TOKEN: TOKEN, CONF_VERIFY_SSL: True},
+    )
+
+
+@pytest.fixture
+def mock_project_entry() -> MockConfigEntry:
+    """Return a config entry that has the project DEMO as a subentry."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="yt.example.com",
+        unique_id=URL,
+        data={CONF_URL: URL, CONF_API_TOKEN: TOKEN, CONF_VERIFY_SSL: True},
+        subentries_data=[
+            {
+                "data": {CONF_PROJECT_ID: "0-1", CONF_PROJECT_KEY: "DEMO"},
+                "subentry_id": "sub-demo",
+                "subentry_type": SUBENTRY_PROJECT,
+                "title": "Demo Project",
+                "unique_id": "0-1",
+            }
+        ],
     )

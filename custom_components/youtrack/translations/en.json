@@ -69,5 +69,23 @@
         "project_unavailable": "This project is no longer available."
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "YouTrack options",
+        "description": "How often Home Assistant asks YouTrack for updates.",
+        "data": {
+          "scan_interval": "Update interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "issues_total": {
+        "name": "Issues"
+      }
+    }
   }
 }
