@@ -15,6 +15,7 @@ from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL, DOMAIN
 from .coordinator import YouTrackProjectCoordinator
 from .data import YouTrackRuntimeData
 from .exceptions import YouTrackAuthError, YouTrackError, YouTrackPermissionError
+from .kb_coordinator import KnowledgeBaseCoordinator
 from .services import async_setup_services
 
 if TYPE_CHECKING:
@@ -55,6 +56,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
         coordinator = YouTrackProjectCoordinator(hass, entry, subentry)
         await coordinator.async_config_entry_first_refresh()
         entry.runtime_data.coordinators[subentry.subentry_id] = coordinator
+        knowledge_base = KnowledgeBaseCoordinator(hass, entry, subentry)
+        # Not every token may read articles; that must not keep the issues from loading.
+        await knowledge_base.async_refresh()
+        entry.runtime_data.knowledge_bases[subentry.subentry_id] = knowledge_base
 
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

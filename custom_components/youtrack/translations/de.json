@@ -164,6 +164,12 @@
       },
       "issues_critical_open": {
         "name": "Kritische offene Tickets"
+      },
+      "articles": {
+        "name": "Artikel"
+      },
+      "last_updated_article": {
+        "name": "Zuletzt geänderter Artikel"
       }
     },
     "binary_sensor": {

@@ -620,24 +620,26 @@ async def test_article_with_invalid_payload(
         await make_client().get_articles()
 
 
-async def test_count_articles_pages_until_the_last_page(make_client: ClientFactory) -> None:
-    """The count adds up the pages."""
+async def test_get_all_articles_pages_until_the_last_page(make_client: ClientFactory) -> None:
+    """All pages are read."""
     client = make_client()
     full = [object()] * 100
     with patch.object(
         client, "get_articles", AsyncMock(side_effect=[full, full[:7]])
     ) as get_articles:
-        assert await client.count_articles(query="project: DEMO") == (107, False)
+        articles, capped = await client.get_all_articles(query="project: DEMO")
 
+    assert (len(articles), capped) == (107, False)
     assert [call.kwargs["skip"] for call in get_articles.await_args_list] == [0, 100]
 
 
-async def test_count_articles_stops_at_the_cap(
-    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker, monkeypatch: pytest.MonkeyPatch
+async def test_get_all_articles_stops_at_the_cap(
+    make_client: ClientFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Huge knowledge bases are reported as capped."""
-    monkeypatch.setattr("custom_components.youtrack.api.MAX_COUNTED_ARTICLES", 200)
-    page = [{"id": f"1-{n}", "idReadable": f"D-A-{n}", "summary": "s"} for n in range(100)]
-    aioclient_mock.get(f"{BASE}/api/articles", json=page, headers=JSON)
+    monkeypatch.setattr("custom_components.youtrack.api.MAX_LISTED_ARTICLES", 200)
+    client = make_client()
+    with patch.object(client, "get_articles", AsyncMock(return_value=[object()] * 100)):
+        articles, capped = await client.get_all_articles()
 
-    assert await make_client().count_articles() == (200, True)
+    assert (len(articles), capped) == (200, True)

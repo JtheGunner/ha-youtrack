@@ -43,7 +43,7 @@ ARTICLE_LIST_FIELDS = (
     "parentArticle(idReadable),hasChildren"
 )
 ARTICLE_FIELDS = f"{ARTICLE_LIST_FIELDS},content"
-MAX_COUNTED_ARTICLES = 2000
+MAX_LISTED_ARTICLES = 2000
 ACTIVITY_CATEGORIES = (
     "IssueCreatedCategory,IssueResolvedCategory,CommentsCategory,CustomFieldCategory"
 )
@@ -214,18 +214,18 @@ class YouTrackClient:
             raise YouTrackResponseError("Expected an article")
         return Article.from_json(article)
 
-    async def count_articles(self, *, query: str | None = None) -> tuple[int, bool]:
-        """Count articles by paging; returns the count and whether the cap cut it short.
+    async def get_all_articles(self, *, query: str | None = None) -> tuple[list[Article], bool]:
+        """Return every article that matches ``query`` and whether the cap cut the list short.
 
-        YouTrack has no count endpoint for articles.
+        YouTrack has no count endpoint for articles, so counting means reading the pages.
         """
-        counted = 0
-        while counted < MAX_COUNTED_ARTICLES:
-            page = await self.get_articles(query=query, top=PAGE_SIZE, skip=counted)
-            counted += len(page)
+        found: list[Article] = []
+        while len(found) < MAX_LISTED_ARTICLES:
+            page = await self.get_articles(query=query, top=PAGE_SIZE, skip=len(found))
+            found.extend(page)
             if len(page) < PAGE_SIZE:
-                return counted, False
-        return counted, True
+                return found, False
+        return found, True
 
     async def create_issue(
         self, project_id: str, summary: str, description: str | None = None
