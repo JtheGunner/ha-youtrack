@@ -44,6 +44,11 @@
       "issue_activity": {
         "default": "mdi:bell-ring"
       }
+    },
+    "todo": {
+      "open_issues": {
+        "default": "mdi:format-list-checks"
+      }
     }
   }
 }

@@ -2,11 +2,38 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import YouTrackProjectCoordinator
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
+    from .data import YouTrackConfigEntry
+
+
+def remove_stale_entities(
+    hass: HomeAssistant,
+    entry: YouTrackConfigEntry,
+    platform: str,
+    prefix: str,
+    wanted: set[str],
+) -> None:
+    """Remove registry entries of ``platform`` that start with ``prefix`` but are not wanted."""
+    registry = er.async_get(hass)
+    for registered in er.async_entries_for_config_entry(registry, entry.entry_id):
+        unique_id = registered.unique_id
+        if (
+            registered.domain == platform
+            and unique_id.startswith(prefix)
+            and unique_id not in wanted
+        ):
+            registry.async_remove(registered.entity_id)
 
 
 class YouTrackProjectEntity(CoordinatorEntity[YouTrackProjectCoordinator]):

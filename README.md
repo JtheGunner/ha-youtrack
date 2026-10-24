@@ -22,7 +22,7 @@
 | 📊 | Issue statistics per project: total, open, resolved, unassigned, overdue, created and resolved in the last 7 days, critical open | ✅ available |
 | 🚨 | Flags for *has overdue issues* and *has critical open issues* | ✅ available |
 | 🔎 | Query sensors: any YouTrack search as a sensor, with the first issues as attributes | ✅ available |
-| ✅ | Open issues as a Home Assistant to-do list | 🛠 planned |
+| ✅ | Open issues as a Home Assistant to-do list (read-only for now) | ✅ available |
 | 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | 🛠 planned |
 | 📚 | Knowledge base: search and read articles | 🛠 planned |
@@ -80,6 +80,12 @@ are not created.
 | ✔️ | Resolved in the last 7 days | | |
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
+
+### ✅ To-do lists
+
+Each project has an **Open issues** to-do list that works with the native to-do card, and every query sensor
+gets a list with its issues. Items read `ID summary`; the description shows state, priority, assignee and
+the link. The lists are read-only: completing an item in Home Assistant does not change YouTrack yet.
 
 ### 🔔 Issue events
 

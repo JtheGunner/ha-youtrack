@@ -181,6 +181,11 @@
           }
         }
       }
+    },
+    "todo": {
+      "open_issues": {
+        "name": "Open issues"
+      }
     }
   }
 }
