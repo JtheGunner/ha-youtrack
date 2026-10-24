@@ -4,13 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-10-24
 
 ### Added
 
-- Knowledge base API client calls (list, search, get).
 - Knowledge base sensors per project: article count and the last updated article with the latest five as attributes.
 - Actions `youtrack.search_articles` and `youtrack.get_article`, which return their result as a response.
+- Example: a script that looks up a knowledge base article and sends it as a notification.
 
 ## [0.2.0] - 2026-10-24
 
