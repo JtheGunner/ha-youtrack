@@ -224,3 +224,39 @@ class ActivityPage:
 
     items: list[Activity]
     size: int
+
+
+@dataclass(frozen=True, slots=True)
+class Article:
+    """A knowledge base article. ``content`` is Markdown and only present when requested."""
+
+    id: str
+    readable_id: str
+    summary: str
+    created: datetime | None
+    updated: datetime | None
+    project: str | None
+    author: str | None
+    parent_id: str | None
+    has_children: bool
+    content: str | None
+
+    @classmethod
+    def from_json(cls, payload: dict[str, Any]) -> Article:
+        """Build an article from an API payload."""
+        project = payload.get("project")
+        author = payload.get("reporter")
+        parent = payload.get("parentArticle")
+        content = payload.get("content")
+        return cls(
+            id=_require_str(payload, "id"),
+            readable_id=_require_str(payload, "idReadable"),
+            summary=_require_str(payload, "summary"),
+            created=_timestamp(payload.get("created")),
+            updated=_timestamp(payload.get("updated")),
+            project=project.get("shortName") if isinstance(project, dict) else None,
+            author=author.get("login") if isinstance(author, dict) else None,
+            parent_id=parent.get("idReadable") if isinstance(parent, dict) else None,
+            has_children=bool(payload.get("hasChildren", False)),
+            content=content if isinstance(content, str) else None,
+        )

@@ -1,0 +1,4 @@
+{"id":"226-1","idReadable":"DEMO-A-2","summary":"Heating manual","created":1790000200000,"updated":1790000900000,
+ "project":{"shortName":"DEMO","$type":"Project"},"reporter":{"login":"example.user","$type":"User"},
+ "parentArticle":{"idReadable":"DEMO-A-1","$type":"Article"},"hasChildren":false,
+ "content":"# Heating manual\n\nBleed the radiators once a year.","$type":"Article"}
