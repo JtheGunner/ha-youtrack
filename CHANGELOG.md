@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- At most 6 requests to YouTrack run at the same time, regardless of the number of projects.
+
 ### Added
 
 - Brand assets (icon and logo, light and dark) shown in Home Assistant and HACS.

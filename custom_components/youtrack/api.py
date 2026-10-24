@@ -44,6 +44,8 @@ ARTICLE_LIST_FIELDS = (
 )
 ARTICLE_FIELDS = f"{ARTICLE_LIST_FIELDS},content"
 MAX_LISTED_ARTICLES = 2000
+# Many projects poll at the same moment; this many requests may be in flight at once.
+MAX_CONCURRENT_REQUESTS = 6
 ACTIVITY_CATEGORIES = (
     "IssueCreatedCategory,IssueResolvedCategory,CommentsCategory,CustomFieldCategory"
 )
@@ -92,6 +94,7 @@ class YouTrackClient:
         self._headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
         self._ssl: bool = verify_ssl
         self._count_retry_delay = count_retry_delay
+        self._slots = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
     @property
     def base_url(self) -> str:
@@ -296,16 +299,19 @@ class YouTrackClient:
         """Send a request and return the decoded JSON body."""
         url = f"{self._base_url}{path}"
         try:
-            async with self._session.request(
-                method,
-                url,
-                params=params,
-                json=json,
-                headers=self._headers,
-                timeout=REQUEST_TIMEOUT,
-                allow_redirects=False,
-                ssl=self._ssl,
-            ) as response:
+            async with (
+                self._slots,
+                self._session.request(
+                    method,
+                    url,
+                    params=params,
+                    json=json,
+                    headers=self._headers,
+                    timeout=REQUEST_TIMEOUT,
+                    allow_redirects=False,
+                    ssl=self._ssl,
+                ) as response,
+            ):
                 return await self._decode(response, allow_empty=allow_empty)
         except TimeoutError as err:
             raise YouTrackConnectionError("Request to YouTrack timed out") from err

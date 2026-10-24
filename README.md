@@ -226,6 +226,33 @@ you can call from automations or voice assistants.
 
 ---
 
+## 📈 Load on YouTrack
+
+The integration polls; it does not need webhooks or a plugin on the server. With the default 5 minute interval:
+
+| Per poll | Requests |
+|---|---|
+| Each project | 7 count requests, 1 request for issues changed since the last poll (a small delta, not the full list) |
+| Each custom query sensor | 2 more (count and the first issues) |
+| Issue activity (events) | 1 for the whole instance, shared by all projects |
+| Each project's knowledge base | 1 listing, but only every 6th poll |
+
+| Projects | Requests per poll | About per second at 5 minutes |
+|---|---|---|
+| 1 | 9 | 0.03 |
+| 5 | 41 | 0.14 |
+| 20 | 161 | 0.54 |
+
+- All requests of a project run together, so YouTrack sees one burst per project per interval. At most 6 requests
+  are in flight at any time, however many projects you add.
+- Every 12th poll the unresolved issues are reloaded completely (100 issues per request) to notice deleted
+  or moved issues. A project with more than 1000 unresolved issues keeps the 1000 most recently changed ones in
+  the to-do list and logs a warning; the counts stay exact because YouTrack computes them.
+- If YouTrack answers *429 Too Many Requests*, the entities keep their last values and the next attempt
+  waits for the time YouTrack asks for. Raise the polling interval under **Configure** to reduce load.
+
+---
+
 ## 🧯 Troubleshooting
 
 - **"The address did not answer like a YouTrack server"** – check the URL, including a possible context path.
