@@ -5,12 +5,21 @@ from datetime import UTC, datetime
 from typing import cast
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.components.todo.const import DOMAIN as TODO_DOMAIN
-from homeassistant.components.todo.const import TodoServices
+from homeassistant.components.todo.const import TodoItemStatus, TodoServices
+from homeassistant.components.todo.entity import TodoItem
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.youtrack.const import (
+    CONF_REOPENED_STATE,
+    CONF_RESOLVED_STATE,
+    CONF_TODO_CREATE,
+)
+from custom_components.youtrack.exceptions import YouTrackPermissionError
 from custom_components.youtrack.models import Issue
 from custom_components.youtrack.todo import issue_to_item
 
@@ -39,7 +48,8 @@ def _issue(key: str, stamp: int, *, resolved: bool = False, assignee: str | None
 
 
 async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
-    entry.add_to_hass(hass)
+    if hass.config_entries.async_get_entry(entry.entry_id) is None:
+        entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
@@ -134,3 +144,143 @@ async def test_query_gets_its_own_list_that_disappears_with_it(
     registry = er.async_get(hass)
     assert registry.async_get(QUERY_LIST) is None
     assert registry.async_get(OPEN_LIST) is not None
+
+
+async def _update(hass: HomeAssistant, entity_id: str, item: str, **fields: str) -> None:
+    await hass.services.async_call(
+        TODO_DOMAIN,
+        TodoServices.UPDATE_ITEM,
+        {"entity_id": entity_id, "item": item, **fields},
+        blocking=True,
+    )
+
+
+async def test_checking_an_item_resolves_the_issue(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Completing an item sets the configured resolved state."""
+    mock_client.get_issues.return_value = [_issue("DEMO-1", 100)]
+    await _setup(hass, mock_project_entry)
+
+    await _update(hass, OPEN_LIST, "DEMO-1", status="completed")
+
+    mock_client.run_command.assert_awaited_once_with("DEMO-1", "State Done")
+
+
+async def test_unchecking_an_item_reopens_the_issue(
+    hass: HomeAssistant, mock_client: MagicMock
+) -> None:
+    """Unchecking a resolved issue of a query list sets the reopened state."""
+    mock_client.get_issues.return_value = [_issue("DEMO-9", 900, resolved=True)]
+    entry = _entry([QUERY])
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, options={CONF_RESOLVED_STATE: "Verified", CONF_REOPENED_STATE: "In Progress"}
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await _update(hass, QUERY_LIST, "DEMO-9", status="needs_action")
+
+    mock_client.run_command.assert_awaited_once_with("DEMO-9", "State In Progress")
+
+
+async def test_unchanged_status_sends_nothing(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Saving an item without changing its status does not touch YouTrack."""
+    mock_client.get_issues.return_value = [_issue("DEMO-1", 100)]
+    await _setup(hass, mock_project_entry)
+
+    await _update(hass, OPEN_LIST, "DEMO-1", status="needs_action")
+
+    mock_client.run_command.assert_not_awaited()
+
+
+async def test_editing_the_text_is_refused(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Renaming an item cannot be written back, so it is refused instead of lost."""
+    mock_client.get_issues.return_value = [_issue("DEMO-1", 100)]
+    await _setup(hass, mock_project_entry)
+
+    with pytest.raises(ServiceValidationError, match="not supported"):
+        await _update(hass, OPEN_LIST, "DEMO-1", rename="Something else")
+
+    mock_client.run_command.assert_not_awaited()
+
+
+async def test_item_that_vanished_is_refused(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """An item that left the list between rendering and saving is reported."""
+    await _setup(hass, mock_project_entry)
+    entity = hass.data["todo"].get_entity(OPEN_LIST)
+
+    with pytest.raises(ServiceValidationError):
+        await entity.async_update_todo_item(
+            TodoItem(uid="DEMO-404", summary="x", status=TodoItemStatus.COMPLETED)
+        )
+
+
+async def test_permission_denied_is_reported(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A token without write permission shows an error instead of failing silently."""
+    mock_client.get_issues.return_value = [_issue("DEMO-1", 100)]
+    await _setup(hass, mock_project_entry)
+    mock_client.run_command.side_effect = YouTrackPermissionError("403")
+
+    with pytest.raises(HomeAssistantError, match="denied the request"):
+        await _update(hass, OPEN_LIST, "DEMO-1", status="completed")
+
+
+async def test_adding_items_is_off_by_default(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Without the option the list offers no item creation."""
+    await _setup(hass, mock_project_entry)
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            TODO_DOMAIN,
+            TodoServices.ADD_ITEM,
+            {"entity_id": OPEN_LIST, "item": "New thing"},
+            blocking=True,
+        )
+
+    mock_client.create_issue.assert_not_awaited()
+
+
+async def test_adding_an_item_creates_an_issue_when_enabled(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """With the option on, a new item becomes an issue of the project."""
+    mock_project_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(mock_project_entry, options={CONF_TODO_CREATE: True})
+    await _setup(hass, mock_project_entry)
+    mock_client.create_issue.return_value = "DEMO-77"
+
+    await hass.services.async_call(
+        TODO_DOMAIN,
+        TodoServices.ADD_ITEM,
+        {"entity_id": OPEN_LIST, "item": " New thing ", "description": "Details"},
+        blocking=True,
+    )
+
+    mock_client.create_issue.assert_awaited_once_with("0-1", "New thing", "Details")
+
+
+async def test_adding_an_item_without_summary_is_refused(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A blank item cannot become an issue."""
+    mock_project_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(mock_project_entry, options={CONF_TODO_CREATE: True})
+    await _setup(hass, mock_project_entry)
+    entity = hass.data["todo"].get_entity(OPEN_LIST)
+
+    with pytest.raises(ServiceValidationError):
+        await entity.async_create_todo_item(TodoItem(summary="  "))
+
+    mock_client.create_issue.assert_not_awaited()

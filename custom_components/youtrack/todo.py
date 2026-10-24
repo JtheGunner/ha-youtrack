@@ -5,10 +5,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from homeassistant.components.todo.const import TodoItemStatus
+from homeassistant.components.todo.const import TodoItemStatus, TodoListEntityFeature
 from homeassistant.components.todo.entity import TodoItem, TodoListEntity
 
+from .const import (
+    CONF_REOPENED_STATE,
+    CONF_RESOLVED_STATE,
+    CONF_TODO_CREATE,
+    DEFAULT_REOPENED_STATE,
+    DEFAULT_RESOLVED_STATE,
+)
 from .entity import YouTrackProjectEntity, remove_stale_entities
+from .services import call_api, command_value, service_error
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -77,7 +85,35 @@ async def async_setup_entry(
         )
 
 
-class YouTrackOpenIssuesTodo(YouTrackProjectEntity, TodoListEntity):
+class YouTrackTodoBase(YouTrackProjectEntity, TodoListEntity):
+    """Shared behaviour of the to-do lists: checking an item resolves the issue."""
+
+    _attr_supported_features = TodoListEntityFeature.UPDATE_TODO_ITEM
+
+    async def async_update_todo_item(self, item: TodoItem) -> None:
+        """Resolve or reopen the issue when the item is checked or unchecked."""
+        current = next((todo for todo in self.todo_items or [] if todo.uid == item.uid), None)
+        if current is None:
+            raise service_error("not_found")
+        if item.summary != current.summary:
+            raise service_error("todo_edit_unsupported")
+        if item.status == current.status:
+            return
+        options = self.coordinator.config_entry.options
+        if item.status == TodoItemStatus.COMPLETED:
+            state = options.get(CONF_RESOLVED_STATE, DEFAULT_RESOLVED_STATE)
+        else:
+            state = options.get(CONF_REOPENED_STATE, DEFAULT_REOPENED_STATE)
+        command = f"State {command_value('state', state)}"
+        entry = self.coordinator.config_entry
+        issue_id = str(item.uid)
+        await call_api(
+            self.hass, entry, lambda: entry.runtime_data.client.run_command(issue_id, command)
+        )
+        await self.coordinator.async_request_refresh()
+
+
+class YouTrackOpenIssuesTodo(YouTrackTodoBase):
     """The unresolved issues of a project."""
 
     _attr_translation_key = "open_issues"
@@ -85,6 +121,25 @@ class YouTrackOpenIssuesTodo(YouTrackProjectEntity, TodoListEntity):
     def __init__(self, coordinator: YouTrackProjectCoordinator) -> None:
         """Create the list."""
         super().__init__(coordinator, "todo")
+        if coordinator.config_entry.options.get(CONF_TODO_CREATE, False):
+            self._attr_supported_features |= (
+                TodoListEntityFeature.CREATE_TODO_ITEM
+                | TodoListEntityFeature.SET_DESCRIPTION_ON_ITEM
+            )
+
+    async def async_create_todo_item(self, item: TodoItem) -> None:
+        """Create an issue from a new item."""
+        entry = self.coordinator.config_entry
+        client = entry.runtime_data.client
+        summary = (item.summary or "").strip()
+        if not summary:
+            raise service_error("empty_summary")
+        await call_api(
+            self.hass,
+            entry,
+            lambda: client.create_issue(self.coordinator.project_id, summary, item.description),
+        )
+        await self.coordinator.async_request_refresh()
 
     @property
     def todo_items(self) -> list[TodoItem]:
@@ -93,7 +148,7 @@ class YouTrackOpenIssuesTodo(YouTrackProjectEntity, TodoListEntity):
         return _items(self.coordinator.data.open_issues.values(), base_url)
 
 
-class YouTrackQueryTodo(YouTrackProjectEntity, TodoListEntity):
+class YouTrackQueryTodo(YouTrackTodoBase):
     """The first issues of a custom query."""
 
     def __init__(self, coordinator: YouTrackProjectCoordinator, query: CustomQuery) -> None:

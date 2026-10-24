@@ -11,7 +11,10 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.youtrack.const import (
     CONF_API_TOKEN,
+    CONF_REOPENED_STATE,
+    CONF_RESOLVED_STATE,
     CONF_SCAN_INTERVAL,
+    CONF_TODO_CREATE,
     CONF_URL,
     CONF_VERIFY_SSL,
     DOMAIN,
@@ -260,7 +263,34 @@ async def test_options_flow_sets_scan_interval(
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert mock_config_entry.options == {CONF_SCAN_INTERVAL: 15}
+    assert mock_config_entry.options == {
+        CONF_SCAN_INTERVAL: 15,
+        CONF_RESOLVED_STATE: "Done",
+        CONF_REOPENED_STATE: "Open",
+        CONF_TODO_CREATE: False,
+    }
+
+
+async def test_options_flow_sets_todo_behaviour(
+    hass: HomeAssistant, mock_client: MagicMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """The states used by the to-do lists and issue creation can be changed."""
+    mock_config_entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_SCAN_INTERVAL: 5,
+            CONF_RESOLVED_STATE: " Verified ",
+            CONF_REOPENED_STATE: "Submitted",
+            CONF_TODO_CREATE: True,
+        },
+    )
+
+    assert mock_config_entry.options[CONF_RESOLVED_STATE] == "Verified"
+    assert mock_config_entry.options[CONF_REOPENED_STATE] == "Submitted"
+    assert mock_config_entry.options[CONF_TODO_CREATE] is True
 
 
 async def test_options_flow_shows_current_interval(

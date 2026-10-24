@@ -9,7 +9,8 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - Actions: `youtrack.create_issue`, `add_comment`, `transition`, `assign` and `log_work`.
-- To-do lists (read-only): the open issues of each project and the issues of each query sensor.
+- To-do lists: the open issues of each project and the issues of each query sensor. Checking or unchecking
+  an item changes the issue state (configurable); creating issues from new items is an opt-in option.
 - Issue activity events: an event entity per project and `youtrack_issue_*` bus events for created,
   updated, resolved, reopened and commented issues. Existing history is not replayed.
 - Unresolved issues of each project are cached and refreshed with small `updated:` delta requests; a full

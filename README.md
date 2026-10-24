@@ -22,7 +22,7 @@
 | 📊 | Issue statistics per project: total, open, resolved, unassigned, overdue, created and resolved in the last 7 days, critical open | ✅ available |
 | 🚨 | Flags for *has overdue issues* and *has critical open issues* | ✅ available |
 | 🔎 | Query sensors: any YouTrack search as a sensor, with the first issues as attributes | ✅ available |
-| ✅ | Open issues as a Home Assistant to-do list (read-only for now) | ✅ available |
+| ✅ | Open issues as a Home Assistant to-do list | ✅ available |
 | 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | ✅ available |
 | 📚 | Knowledge base: search and read articles | 🛠 planned |
@@ -110,7 +110,15 @@ response_variable: created
 
 Each project has an **Open issues** to-do list that works with the native to-do card, and every query sensor
 gets a list with its issues. Items read `ID summary`; the description shows state, priority, assignee and
-the link. The lists are read-only: completing an item in Home Assistant does not change YouTrack yet.
+the link.
+
+- **Checking** an item sets the issue to the state *State for checked items* (default `Done`);
+  **unchecking** sets *State for unchecked items* (default `Open`). Both are options of the integration
+  and must exist in your workflow.
+- **Adding** items is off by default. Turn on *Create issues from new to-do items* to let new items of
+  the *Open issues* list become issues of that project.
+- Renaming an item is refused: edit the text in YouTrack.
+- If the token's user may not change the issue, the card shows YouTrack's refusal.
 
 ### 🔔 Issue events
 

@@ -124,9 +124,17 @@
     "step": {
       "init": {
         "title": "YouTrack-Optionen",
-        "description": "Wie oft Home Assistant YouTrack nach Änderungen fragt.",
+        "description": "Abfrage-Intervall und was die To-do-Listen in YouTrack ändern dürfen.",
         "data": {
-          "scan_interval": "Aktualisierungsintervall (Minuten)"
+          "scan_interval": "Aktualisierungsintervall (Minuten)",
+          "resolved_state": "Status für abgehakte Einträge",
+          "reopened_state": "Status für wieder geöffnete Einträge",
+          "todo_create": "Neue To-do-Einträge als Tickets anlegen"
+        },
+        "data_description": {
+          "resolved_state": "Abhaken setzt das Ticket auf diesen Status.",
+          "reopened_state": "Das Abhaken zurücknehmen setzt das Ticket auf diesen Status.",
+          "todo_create": "Neue Einträge der Liste offener Tickets werden als Tickets im Projekt angelegt."
         }
       }
     }
@@ -343,6 +351,12 @@
     },
     "created_without_fields": {
       "message": "Ticket {issue_id} wurde erstellt, aber Typ, Priorität oder Bearbeiter konnten nicht gesetzt werden: {error}"
+    },
+    "todo_edit_unsupported": {
+      "message": "Der Text eines Tickets kann hier nicht geändert werden. Bearbeite es in YouTrack."
+    },
+    "empty_summary": {
+      "message": "Ein Ticket braucht einen Titel."
     }
   }
 }
