@@ -1,8 +1,10 @@
 create_issue:
-  target:
-    device:
-      integration: youtrack
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: youtrack
     summary:
       required: true
       example: Heating pump makes noise

@@ -85,7 +85,7 @@ are not created.
 
 | Action | Fields | Notes |
 |---|---|---|
-| `youtrack.create_issue` | project device (target), `summary`, `description`, `type`, `priority`, `assignee` | Returns `issue_id` and `url`. |
+| `youtrack.create_issue` | `device_id` (project), `summary`, `description`, `type`, `priority`, `assignee` | Returns `issue_id` and `url`. |
 | `youtrack.add_comment` | `issue_id`, `text` | |
 | `youtrack.transition` | `issue_id`, `state`, `field` (default `State`) | |
 | `youtrack.assign` | `issue_id`, `assignee` (login) | |
@@ -99,9 +99,8 @@ if YouTrack denies it, the action fails with a clear message.
 
 ```yaml
 action: youtrack.create_issue
-target:
-  device_id: <project device>
 data:
+  device_id: <project device>
   summary: Heating pump is noisy
   priority: Major
 response_variable: created
