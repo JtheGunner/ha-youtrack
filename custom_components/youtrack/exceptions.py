@@ -36,5 +36,9 @@ class YouTrackInvalidQueryError(YouTrackError):
     """The server rejected a search query (HTTP 400, invalid_query)."""
 
 
+class YouTrackBadRequestError(YouTrackError):
+    """The server rejected a request body or command (HTTP 400)."""
+
+
 class YouTrackResponseError(YouTrackError):
     """The server answered with something this client cannot interpret."""

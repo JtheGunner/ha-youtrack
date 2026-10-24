@@ -1,5 +1,6 @@
 """Tests for the YouTrack API client."""
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
@@ -9,6 +10,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 from custom_components.youtrack.api import normalize_base_url
 from custom_components.youtrack.exceptions import (
     YouTrackAuthError,
+    YouTrackBadRequestError,
     YouTrackConnectionError,
     YouTrackInvalidQueryError,
     YouTrackNotFoundError,
@@ -323,10 +325,10 @@ async def test_invalid_query(
 async def test_other_bad_request(
     make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
 ) -> None:
-    """A 400 that is not an invalid query is a generic response error."""
+    """A 400 that is not an invalid query is a bad request."""
     aioclient_mock.get(f"{BASE}/api/config", status=400, json={"error": "bad_request"})
 
-    with pytest.raises(YouTrackResponseError):
+    with pytest.raises(YouTrackBadRequestError):
         await make_client().get_server_info()
 
 
@@ -434,3 +436,107 @@ async def test_project_field_without_type(
     (field,) = await make_client().get_project_fields("0-1")
 
     assert field.field_type == ""
+
+
+async def test_create_issue(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """The project and text are sent; the readable id comes back."""
+    aioclient_mock.post(f"{BASE}/api/issues", json={"idReadable": "DEMO-9"}, headers=JSON)
+
+    issue_id = await make_client().create_issue("0-1", "Title", "Body")
+
+    assert issue_id == "DEMO-9"
+    body = aioclient_mock.mock_calls[0][2]
+    assert body == {"project": {"id": "0-1"}, "summary": "Title", "description": "Body"}
+
+
+async def test_create_issue_without_description_and_id(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A response without id is an error; the description is optional."""
+    aioclient_mock.post(f"{BASE}/api/issues", json={}, headers=JSON)
+
+    with pytest.raises(YouTrackResponseError):
+        await make_client().create_issue("0-1", "Title")
+
+    assert aioclient_mock.mock_calls[0][2] == {"project": {"id": "0-1"}, "summary": "Title"}
+
+
+async def test_add_comment(make_client: ClientFactory, aioclient_mock: AiohttpClientMocker) -> None:
+    """The text is posted to the issue's comments."""
+    aioclient_mock.post(f"{BASE}/api/issues/DEMO-1/comments", json={"id": "4-1"}, headers=JSON)
+
+    await make_client().add_comment("DEMO-1", "Hello")
+
+    assert aioclient_mock.mock_calls[0][2] == {"text": "Hello"}
+
+
+async def test_run_command_accepts_an_empty_answer(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Commands may answer with an empty body."""
+    aioclient_mock.post(f"{BASE}/api/commands", text="")
+
+    await make_client().run_command("DEMO-1", "State Done")
+
+    assert aioclient_mock.mock_calls[0][2] == {
+        "query": "State Done",
+        "issues": [{"idReadable": "DEMO-1"}],
+    }
+
+
+async def test_rejected_command(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A command YouTrack does not understand is a bad request with its explanation."""
+    aioclient_mock.post(
+        f"{BASE}/api/commands",
+        status=400,
+        json={"error": "bad_request", "error_description": "Unknown command: Bogus"},
+        headers=JSON,
+    )
+
+    with pytest.raises(YouTrackBadRequestError, match="Unknown command"):
+        await make_client().run_command("DEMO-1", "Bogus")
+
+
+async def test_log_work(make_client: ClientFactory, aioclient_mock: AiohttpClientMocker) -> None:
+    """Duration, text, date and type are sent."""
+    aioclient_mock.post(
+        f"{BASE}/api/issues/DEMO-1/timeTracking/workItems", json={"id": "1"}, headers=JSON
+    )
+
+    await make_client().log_work(
+        "DEMO-1", "1h", text="Done", date=datetime(2026, 10, 24, tzinfo=UTC), work_type="Dev"
+    )
+
+    assert aioclient_mock.mock_calls[0][2] == {
+        "duration": {"presentation": "1h"},
+        "text": "Done",
+        "date": 1792800000000,
+        "type": {"name": "Dev"},
+    }
+
+
+async def test_log_work_minimal(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Only the duration is mandatory."""
+    aioclient_mock.post(
+        f"{BASE}/api/issues/DEMO-1/timeTracking/workItems", json={"id": "1"}, headers=JSON
+    )
+
+    await make_client().log_work("DEMO-1", "5m")
+
+    assert aioclient_mock.mock_calls[0][2] == {"duration": {"presentation": "5m"}}
+
+
+async def test_bad_request_without_description(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A bare 400 still becomes a bad request error."""
+    aioclient_mock.post(f"{BASE}/api/issues", status=400, json={}, headers=JSON)
+
+    with pytest.raises(YouTrackBadRequestError, match="Bad request"):
+        await make_client().create_issue("0-1", "Title")

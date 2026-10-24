@@ -187,5 +187,162 @@
         "name": "Open issues"
       }
     }
+  },
+  "services": {
+    "create_issue": {
+      "name": "Create issue",
+      "description": "Creates an issue in the selected project and returns its ID and link.",
+      "fields": {
+        "summary": {
+          "name": "Summary",
+          "description": "The title of the issue."
+        },
+        "description": {
+          "name": "Description",
+          "description": "The text of the issue."
+        },
+        "type": {
+          "name": "Type",
+          "description": "The issue type, for example Task. It must exist in the project."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "The priority, for example Major. It must exist in the project."
+        },
+        "assignee": {
+          "name": "Assignee",
+          "description": "The login of the user to assign."
+        }
+      }
+    },
+    "add_comment": {
+      "name": "Add comment",
+      "description": "Adds a comment to an issue.",
+      "fields": {
+        "issue_id": {
+          "name": "Issue ID",
+          "description": "The ID of the issue, for example DEMO-12."
+        },
+        "text": {
+          "name": "Comment",
+          "description": "The comment text. Markdown is supported."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Only needed with more than one YouTrack instance: any project of the instance."
+        }
+      }
+    },
+    "transition": {
+      "name": "Change state",
+      "description": "Sets the state of an issue.",
+      "fields": {
+        "issue_id": {
+          "name": "Issue ID",
+          "description": "The ID of the issue, for example DEMO-12."
+        },
+        "state": {
+          "name": "State",
+          "description": "The new state, for example In Progress."
+        },
+        "field": {
+          "name": "Field",
+          "description": "The name of the state field if it is not State."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Only needed with more than one YouTrack instance: any project of the instance."
+        }
+      }
+    },
+    "assign": {
+      "name": "Assign issue",
+      "description": "Assigns an issue to a user, or removes the assignee with Unassigned.",
+      "fields": {
+        "issue_id": {
+          "name": "Issue ID",
+          "description": "The ID of the issue, for example DEMO-12."
+        },
+        "assignee": {
+          "name": "Assignee",
+          "description": "The login of the user, or Unassigned."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Only needed with more than one YouTrack instance: any project of the instance."
+        }
+      }
+    },
+    "log_work": {
+      "name": "Log work",
+      "description": "Adds a work item with the time spent on an issue.",
+      "fields": {
+        "issue_id": {
+          "name": "Issue ID",
+          "description": "The ID of the issue, for example DEMO-12."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "The time spent, for example 1h 30m. Units are w, d, h and m."
+        },
+        "text": {
+          "name": "Description",
+          "description": "What was done."
+        },
+        "date": {
+          "name": "Date",
+          "description": "When the work happened. Defaults to now."
+        },
+        "work_type": {
+          "name": "Work type",
+          "description": "The name of the work type, if your project uses them."
+        },
+        "device_id": {
+          "name": "Project",
+          "description": "Only needed with more than one YouTrack instance: any project of the instance."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_command_value": {
+      "message": "The value for {field} contains characters that YouTrack commands do not accept."
+    },
+    "invalid_issue_id": {
+      "message": "{issue_id} is not an issue ID like DEMO-12."
+    },
+    "invalid_duration": {
+      "message": "{duration} is not a duration like 1h 30m."
+    },
+    "select_one_project": {
+      "message": "Select exactly one YouTrack project."
+    },
+    "unknown_project": {
+      "message": "The selected device is not a loaded YouTrack project."
+    },
+    "select_instance": {
+      "message": "There is more than one YouTrack instance. Select a project of the one you mean."
+    },
+    "not_loaded": {
+      "message": "YouTrack is not set up or not connected."
+    },
+    "auth_failed": {
+      "message": "YouTrack rejected the token. Reauthenticate the integration."
+    },
+    "permission_denied": {
+      "message": "YouTrack denied the request. The token's user lacks permission for this action."
+    },
+    "not_found": {
+      "message": "YouTrack could not find that issue or project."
+    },
+    "rejected": {
+      "message": "YouTrack rejected the request: {reason}"
+    },
+    "request_failed": {
+      "message": "The request to YouTrack failed: {error}"
+    },
+    "created_without_fields": {
+      "message": "Issue {issue_id} was created, but setting type, priority or assignee failed: {error}"
+    }
   }
 }
