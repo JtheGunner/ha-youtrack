@@ -10,7 +10,7 @@
           "verify_ssl": "Verify SSL certificate"
         },
         "data_description": {
-          "url": "For example https://youtrack.example.com or https://example.youtrack.cloud",
+          "url": "The address you use to open YouTrack in the browser, including a possible context path.",
           "api_token": "The token needs access to the projects you want to add.",
           "verify_ssl": "Disable only for self-signed certificates."
         }
