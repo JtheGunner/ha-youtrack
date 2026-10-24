@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.3] - 2026-10-25
+
+### Changed
+
+- The README installation section leads with searching for YouTrack in HACS and keeps the custom repository steps as a fallback.
+
 ## [1.1.2] - 2026-10-24
 
 ### Fixed
