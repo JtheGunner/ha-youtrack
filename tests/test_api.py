@@ -540,3 +540,104 @@ async def test_bad_request_without_description(
 
     with pytest.raises(YouTrackBadRequestError, match="Bad request"):
         await make_client().create_issue("0-1", "Title")
+
+
+async def test_get_articles(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Articles are parsed and the query and paging parameters are sent."""
+    aioclient_mock.get(
+        f"{BASE}/api/articles", json=load_json_fixture("articles.json"), headers=JSON
+    )
+
+    articles = await make_client().get_articles(query="project: DEMO heating", top=20, skip=40)
+
+    child, root = articles
+    assert (child.readable_id, child.parent_id, child.has_children) == (
+        "DEMO-A-2",
+        "DEMO-A-1",
+        False,
+    )
+    assert (root.readable_id, root.parent_id, root.has_children) == ("DEMO-A-1", None, True)
+    assert child.project == "DEMO"
+    assert child.author == "example.user"
+    assert child.content is None
+    query = aioclient_mock.mock_calls[0][1].query
+    assert (query["query"], query["$top"], query["$skip"]) == ("project: DEMO heating", "20", "40")
+    assert "content" not in query["fields"]
+
+
+async def test_get_articles_without_query_and_with_bad_payload(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """The query is optional; a non-list answer is an error."""
+    aioclient_mock.get(f"{BASE}/api/articles", json={}, headers=JSON)
+
+    with pytest.raises(YouTrackResponseError):
+        await make_client().get_articles()
+
+    assert "query" not in aioclient_mock.mock_calls[0][1].query
+
+
+async def test_get_article_includes_markdown_content(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A single article carries its Markdown content."""
+    aioclient_mock.get(
+        f"{BASE}/api/articles/DEMO-A-2", json=load_json_fixture("article.json"), headers=JSON
+    )
+
+    article = await make_client().get_article("DEMO-A-2")
+
+    assert article.content == "# Heating manual\n\nBleed the radiators once a year."
+    assert "content" in aioclient_mock.mock_calls[0][1].query["fields"]
+
+
+async def test_get_article_errors(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Unknown articles are not found; a list instead of an article is an error."""
+    aioclient_mock.get(
+        f"{BASE}/api/articles/DEMO-A-9", status=404, text="<html></html>", headers=HTML
+    )
+    aioclient_mock.get(f"{BASE}/api/articles/DEMO-A-8", json=[], headers=JSON)
+
+    with pytest.raises(YouTrackNotFoundError):
+        await make_client().get_article("DEMO-A-9")
+    with pytest.raises(YouTrackResponseError):
+        await make_client().get_article("DEMO-A-8")
+
+
+async def test_article_with_invalid_payload(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Articles need an id, a readable id and a summary."""
+    aioclient_mock.get(
+        f"{BASE}/api/articles", json=[{"id": "1", "idReadable": "A-A-1"}], headers=JSON
+    )
+
+    with pytest.raises(YouTrackResponseError):
+        await make_client().get_articles()
+
+
+async def test_count_articles_pages_until_the_last_page(make_client: ClientFactory) -> None:
+    """The count adds up the pages."""
+    client = make_client()
+    full = [object()] * 100
+    with patch.object(
+        client, "get_articles", AsyncMock(side_effect=[full, full[:7]])
+    ) as get_articles:
+        assert await client.count_articles(query="project: DEMO") == (107, False)
+
+    assert [call.kwargs["skip"] for call in get_articles.await_args_list] == [0, 100]
+
+
+async def test_count_articles_stops_at_the_cap(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Huge knowledge bases are reported as capped."""
+    monkeypatch.setattr("custom_components.youtrack.api.MAX_COUNTED_ARTICLES", 200)
+    page = [{"id": f"1-{n}", "idReadable": f"D-A-{n}", "summary": "s"} for n in range(100)]
+    aioclient_mock.get(f"{BASE}/api/articles", json=page, headers=JSON)
+
+    assert await make_client().count_articles() == (200, True)

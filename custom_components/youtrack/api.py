@@ -22,7 +22,7 @@ from .exceptions import (
     YouTrackRateLimitError,
     YouTrackResponseError,
 )
-from .models import Activity, ActivityPage, Issue, Project, ProjectField, ServerInfo, User
+from .models import Activity, ActivityPage, Article, Issue, Project, ProjectField, ServerInfo, User
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -38,6 +38,12 @@ ISSUE_FIELDS = (
     "customFields(name,value(name,login))"
 )
 PROJECT_FIELDS = "id,name,shortName,archived"
+ARTICLE_LIST_FIELDS = (
+    "id,idReadable,summary,created,updated,project(shortName),reporter(login),"
+    "parentArticle(idReadable),hasChildren"
+)
+ARTICLE_FIELDS = f"{ARTICLE_LIST_FIELDS},content"
+MAX_COUNTED_ARTICLES = 2000
 ACTIVITY_CATEGORIES = (
     "IssueCreatedCategory,IssueResolvedCategory,CommentsCategory,CustomFieldCategory"
 )
@@ -188,6 +194,38 @@ class YouTrackClient:
             raise YouTrackResponseError("Expected a list of activities")
         activities = (Activity.from_json(item) for item in page if isinstance(item, dict))
         return ActivityPage([a for a in activities if a is not None], len(page))
+
+    async def get_articles(
+        self, *, query: str | None = None, top: int = PAGE_SIZE, skip: int = 0
+    ) -> list[Article]:
+        """Return one page of articles without their content, optionally filtered by ``query``."""
+        params: dict[str, str | int] = {"fields": ARTICLE_LIST_FIELDS, "$top": top, "$skip": skip}
+        if query:
+            params["query"] = query
+        page = await self._get_json("/api/articles", params)
+        if not isinstance(page, list):
+            raise YouTrackResponseError("Expected a list of articles")
+        return [Article.from_json(item) for item in page]
+
+    async def get_article(self, article_id: str) -> Article:
+        """Return one article including its Markdown content."""
+        article = await self._get_json(f"/api/articles/{article_id}", {"fields": ARTICLE_FIELDS})
+        if not isinstance(article, dict):
+            raise YouTrackResponseError("Expected an article")
+        return Article.from_json(article)
+
+    async def count_articles(self, *, query: str | None = None) -> tuple[int, bool]:
+        """Count articles by paging; returns the count and whether the cap cut it short.
+
+        YouTrack has no count endpoint for articles.
+        """
+        counted = 0
+        while counted < MAX_COUNTED_ARTICLES:
+            page = await self.get_articles(query=query, top=PAGE_SIZE, skip=counted)
+            counted += len(page)
+            if len(page) < PAGE_SIZE:
+                return counted, False
+        return counted, True
 
     async def create_issue(
         self, project_id: str, summary: str, description: str | None = None

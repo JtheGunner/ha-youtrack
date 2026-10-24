@@ -76,6 +76,14 @@ as the stable subentry unique ID; `shortName` can be renamed.
 
 ## Knowledge base articles
 
+> **Shapes are not verified against a live instance.** The test instance has no articles and creating one
+> was not done to avoid changing real data. The client reads `idReadable`, `summary`, `created`, `updated`,
+> `project(shortName)`, `reporter(login)`, `parentArticle(idReadable)`, `hasChildren` and `content` as described
+> in the YouTrack REST reference; the fixtures in `tests/fixtures/api/articles.json` and `article.json` are
+> written from that reference, not recorded. The endpoint itself answers `200` (verified), but it also accepts
+> unknown field names while there are no articles, so the projection could not be validated either.
+> Counting has no endpoint and is done by paging (capped).
+
 `GET /api/articles?fields=idReadable,summary,updated,project(shortName),parentArticle(idReadable)&$top=n` and
 `?query=<text>` answered `200` with `[]`. The test instance has **no articles**, so the field shapes (content,
 hierarchy, attachments) are **unverified**. T20 must create a throwaway article first and record fixtures.
