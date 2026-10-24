@@ -251,6 +251,7 @@ The integration polls; it does not need webhooks or a plugin on the server. With
   the to-do list and logs a warning; the counts stay exact because YouTrack computes them.
 - If YouTrack answers *429 Too Many Requests*, the entities keep their last values and the next attempt
   waits for the time YouTrack asks for. Raise the polling interval under **Configure** to reduce load.
+- Want updates faster than the polling interval? See [push updates with a workflow](docs/webhook-evaluation.md).
 
 ---
 
