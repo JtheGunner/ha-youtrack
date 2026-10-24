@@ -12,12 +12,16 @@ from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
     ConfigSubentryFlow,
+    OptionsFlow,
     SubentryFlowResult,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -32,9 +36,13 @@ from .const import (
     CONF_API_TOKEN,
     CONF_PROJECT_ID,
     CONF_PROJECT_KEY,
+    CONF_SCAN_INTERVAL,
     CONF_URL,
     CONF_VERIFY_SSL,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
     SUBENTRY_PROJECT,
 )
 from .exceptions import (
@@ -108,6 +116,12 @@ class YouTrackConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the setup of a YouTrack instance."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        """Return the options flow (polling interval)."""
+        return YouTrackOptionsFlow()
 
     @classmethod
     @callback
@@ -258,6 +272,34 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
                 {
                     probatio.Required(CONF_PROJECT_ID): SelectSelector(
                         SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+                    )
+                }
+            ),
+        )
+
+
+class YouTrackOptionsFlow(OptionsFlow):
+    """Options of a YouTrack instance."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Set how often YouTrack is polled."""
+        if user_input is not None:
+            return self.async_create_entry(
+                data={CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])}
+            )
+        current = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(CONF_SCAN_INTERVAL, default=current): NumberSelector(
+                        NumberSelectorConfig(
+                            min=MIN_SCAN_INTERVAL,
+                            max=MAX_SCAN_INTERVAL,
+                            step=1,
+                            unit_of_measurement="min",
+                            mode=NumberSelectorMode.BOX,
+                        )
                     )
                 }
             ),
