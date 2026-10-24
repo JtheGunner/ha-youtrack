@@ -1,14 +1,19 @@
-"""Smoke tests for the integration package."""
+"""Tests for setting up and unloading the integration."""
 
-import json
-from pathlib import Path
+from unittest.mock import MagicMock
 
+import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.youtrack import DOMAIN
-
-MANIFEST = Path(__file__).parent.parent / "custom_components" / "youtrack" / "manifest.json"
+from custom_components.youtrack.const import DOMAIN
+from custom_components.youtrack.exceptions import (
+    YouTrackAuthError,
+    YouTrackConnectionError,
+    YouTrackPermissionError,
+)
 
 
 async def test_integration_is_discoverable(hass: HomeAssistant) -> None:
@@ -19,6 +24,50 @@ async def test_integration_is_discoverable(hass: HomeAssistant) -> None:
     assert integration.name == "YouTrack"
 
 
-def test_manifest_domain_matches_constant() -> None:
-    """The manifest domain and the DOMAIN constant stay in sync."""
-    assert json.loads(MANIFEST.read_text())["domain"] == DOMAIN
+async def test_setup_and_unload(
+    hass: HomeAssistant, mock_client: MagicMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """A reachable instance loads, exposes the client and unloads cleanly."""
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.runtime_data.client is mock_client
+
+    await hass.config_entries.async_unload(mock_config_entry.entry_id)
+
+    entry = hass.config_entries.async_get_entry(mock_config_entry.entry_id)
+    assert entry is not None
+    assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+@pytest.mark.parametrize("exception", [YouTrackAuthError("x"), YouTrackPermissionError("x")])
+async def test_setup_fails_for_rejected_token(
+    hass: HomeAssistant,
+    mock_client: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    exception: Exception,
+) -> None:
+    """A rejected token fails the setup so that reauthentication can start."""
+    mock_client.get_current_user.side_effect = exception
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+
+
+async def test_setup_retries_when_server_unreachable(
+    hass: HomeAssistant, mock_client: MagicMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Connection problems are retried later."""
+    mock_client.get_current_user.side_effect = YouTrackConnectionError("down")
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY

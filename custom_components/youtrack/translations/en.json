@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to YouTrack",
+        "description": "Enter the address of your YouTrack instance and a permanent token. Create a token under Profile > Account Security > New token.",
+        "data": {
+          "url": "URL",
+          "api_token": "Permanent token",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "url": "For example https://youtrack.example.com or https://example.youtrack.cloud",
+          "api_token": "The token needs access to the projects you want to add.",
+          "verify_ssl": "Disable only for self-signed certificates."
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "This is not a valid http(s) address.",
+      "cannot_connect": "Cannot connect to YouTrack. Check the address and your network.",
+      "invalid_auth": "YouTrack rejected the token.",
+      "no_permission": "The token is valid but has no permission to read data.",
+      "invalid_response": "The address did not answer like a YouTrack server. Check the URL, including a possible context path.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This YouTrack instance is already configured."
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mit YouTrack verbinden",
+        "description": "Gib die Adresse deiner YouTrack-Instanz und ein permanentes Token ein. Ein Token erstellst du unter Profil > Account-Sicherheit > Neues Token.",
+        "data": {
+          "url": "URL",
+          "api_token": "Permanentes Token",
+          "verify_ssl": "SSL-Zertifikat prüfen"
+        },
+        "data_description": {
+          "url": "Zum Beispiel https://youtrack.example.com oder https://example.youtrack.cloud",
+          "api_token": "Das Token braucht Zugriff auf die Projekte, die du hinzufügen möchtest.",
+          "verify_ssl": "Nur bei selbstsignierten Zertifikaten deaktivieren."
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Das ist keine gültige http(s)-Adresse.",
+      "cannot_connect": "Verbindung zu YouTrack nicht möglich. Prüfe die Adresse und dein Netzwerk.",
+      "invalid_auth": "YouTrack hat das Token abgelehnt.",
+      "no_permission": "Das Token ist gültig, hat aber keine Berechtigung zum Lesen.",
+      "invalid_response": "Die Adresse antwortet nicht wie ein YouTrack-Server. Prüfe die URL, auch einen möglichen Kontextpfad.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Diese YouTrack-Instanz ist bereits eingerichtet."
+    }
+  }
+}
