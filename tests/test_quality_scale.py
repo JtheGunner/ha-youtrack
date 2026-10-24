@@ -40,15 +40,39 @@ SILVER = {
     "test-coverage",
 }
 
+GOLD = {
+    "devices",
+    "diagnostics",
+    "discovery-update-info",
+    "discovery",
+    "docs-data-update",
+    "docs-examples",
+    "docs-known-limitations",
+    "docs-supported-devices",
+    "docs-supported-functions",
+    "docs-troubleshooting",
+    "docs-use-cases",
+    "dynamic-devices",
+    "entity-category",
+    "entity-device-class",
+    "entity-disabled-by-default",
+    "entity-translations",
+    "exception-translations",
+    "icon-translations",
+    "reconfiguration-flow",
+    "repair-issues",
+    "stale-devices",
+}
+
 
 def _rules() -> dict[str, object]:
     rules: dict[str, object] = yaml.safe_load(QUALITY_SCALE.read_text())["rules"]
     return rules
 
 
-def test_every_bronze_and_silver_rule_is_listed_once() -> None:
+def test_every_bronze_silver_and_gold_rule_is_listed_once() -> None:
     """No rule is missing and nothing unknown is claimed."""
-    assert set(_rules()) == BRONZE | SILVER
+    assert set(_rules()) == BRONZE | SILVER | GOLD
 
 
 def test_statuses_are_valid_and_exemptions_are_explained() -> None:

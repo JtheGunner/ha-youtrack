@@ -9,6 +9,8 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - A calendar per project with the due dates of unresolved issues, for projects that have a `Due Date` field.
+- Diagnostics include the state of each project's knowledge base.
+- README: use cases and known limitations.
 
 ## [1.0.0] - 2026-10-24
 

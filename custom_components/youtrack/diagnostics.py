@@ -31,4 +31,12 @@ async def async_get_config_entry_diagnostics(
             }
             for coordinator in entry.runtime_data.coordinators.values()
         },
+        "knowledge_bases": {
+            knowledge_base.project_key: {
+                "last_update_success": knowledge_base.last_update_success,
+                "articles": knowledge_base.data.count if knowledge_base.data else None,
+                "capped": knowledge_base.data.capped if knowledge_base.data else None,
+            }
+            for knowledge_base in entry.runtime_data.knowledge_bases.values()
+        },
     }
