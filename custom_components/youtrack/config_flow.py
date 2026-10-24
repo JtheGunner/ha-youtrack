@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 import probatio
 from homeassistant.config_entries import (
@@ -36,12 +37,20 @@ from .const import (
     CONF_API_TOKEN,
     CONF_PROJECT_ID,
     CONF_PROJECT_KEY,
+    CONF_QUERIES,
+    CONF_QUERY_ID,
+    CONF_QUERY_NAME,
+    CONF_QUERY_TEXT,
+    CONF_QUERY_TOP,
     CONF_SCAN_INTERVAL,
     CONF_URL,
     CONF_VERIFY_SSL,
+    DEFAULT_QUERY_TOP,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_QUERY_TOP,
     MAX_SCAN_INTERVAL,
+    MIN_QUERY_TOP,
     MIN_SCAN_INTERVAL,
     SUBENTRY_PROJECT,
 )
@@ -49,9 +58,11 @@ from .exceptions import (
     YouTrackAuthError,
     YouTrackConnectionError,
     YouTrackError,
+    YouTrackInvalidQueryError,
     YouTrackPermissionError,
     YouTrackResponseError,
 )
+from .queries import scoped_query
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -235,7 +246,9 @@ class YouTrackConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class ProjectSubentryFlowHandler(ConfigSubentryFlow):
-    """Add a YouTrack project to an instance."""
+    """Add a YouTrack project to an instance and manage its custom query sensors."""
+
+    _editing: str = ""
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Let the user pick one of the projects that are not added yet."""
@@ -277,6 +290,138 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
             ),
         )
 
+    def _queries(self) -> list[dict[str, Any]]:
+        return [dict(item) for item in self._get_reconfigure_subentry().data.get(CONF_QUERIES, ())]
+
+    def _save_queries(self, queries: list[dict[str, Any]]) -> SubentryFlowResult:
+        subentry = self._get_reconfigure_subentry()
+        return self.async_update_and_abort(
+            self._get_entry(), subentry, data={**subentry.data, CONF_QUERIES: queries}
+        )
+
+    async def _validate_query(self, text: str) -> tuple[str | None, str]:
+        """Ask YouTrack whether it accepts the query; return an error key and its detail."""
+        entry: YouTrackConfigEntry = self._get_entry()
+        project_key = self._get_reconfigure_subentry().data[CONF_PROJECT_KEY]
+        try:
+            await entry.runtime_data.client.count_issues(scoped_query(project_key, text))
+        except YouTrackInvalidQueryError as err:
+            return "invalid_query", str(err)
+        except YouTrackError as err:
+            return "cannot_validate", str(err)
+        return None, ""
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Manage the custom query sensors of the project."""
+        if self._get_entry().state is not ConfigEntryState.LOADED:
+            return self.async_abort(reason="entry_not_loaded")
+        menu = ["add_query"]
+        if self._queries():
+            menu += ["edit_query", "remove_query"]
+        return self.async_show_menu(step_id="reconfigure", menu_options=menu)
+
+    async def async_step_add_query(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Add a named query."""
+        errors: dict[str, str] = {}
+        placeholders = {"error": ""}
+        if user_input is not None:
+            error, detail = await self._validate_query(user_input[CONF_QUERY_TEXT])
+            if error is None:
+                queries = self._queries()
+                queries.append(self._query_data(uuid4().hex[:8], user_input))
+                return self._save_queries(queries)
+            errors[CONF_QUERY_TEXT] = error
+            placeholders["error"] = detail
+        return self.async_show_form(
+            step_id="add_query",
+            data_schema=self.add_suggested_values_to_schema(QUERY_SCHEMA, user_input),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_edit_query(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Pick the query to change."""
+        queries = self._queries()
+        if user_input is not None:
+            self._editing = user_input[CONF_QUERY_ID]
+            return await self.async_step_edit_query_details()
+        return self.async_show_form(
+            step_id="edit_query",
+            data_schema=probatio.Schema(
+                {probatio.Required(CONF_QUERY_ID): self._query_selector(queries)}
+            ),
+        )
+
+    async def async_step_edit_query_details(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Change name, text or issue limit of the picked query."""
+        queries = self._queries()
+        # The picker only offers existing queries, so the id is always found.
+        index = next(i for i, item in enumerate(queries) if item[CONF_QUERY_ID] == self._editing)
+        errors: dict[str, str] = {}
+        placeholders = {"error": ""}
+        if user_input is not None:
+            error, detail = await self._validate_query(user_input[CONF_QUERY_TEXT])
+            if error is None:
+                queries[index] = self._query_data(self._editing, user_input)
+                return self._save_queries(queries)
+            errors[CONF_QUERY_TEXT] = error
+            placeholders["error"] = detail
+        return self.async_show_form(
+            step_id="edit_query_details",
+            data_schema=self.add_suggested_values_to_schema(
+                QUERY_SCHEMA, user_input or queries[index]
+            ),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_remove_query(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Remove queries; their sensors disappear."""
+        queries = self._queries()
+        if user_input is not None:
+            drop = set(user_input[CONF_QUERIES])
+            return self._save_queries([q for q in queries if q[CONF_QUERY_ID] not in drop])
+        return self.async_show_form(
+            step_id="remove_query",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(CONF_QUERIES): self._query_selector(queries, multiple=True),
+                }
+            ),
+        )
+
+    @staticmethod
+    def _query_data(query_id: str, user_input: dict[str, Any]) -> dict[str, Any]:
+        return {
+            CONF_QUERY_ID: query_id,
+            CONF_QUERY_NAME: user_input[CONF_QUERY_NAME].strip(),
+            CONF_QUERY_TEXT: user_input[CONF_QUERY_TEXT].strip(),
+            CONF_QUERY_TOP: int(user_input[CONF_QUERY_TOP]),
+        }
+
+    @staticmethod
+    def _query_selector(queries: list[dict[str, Any]], *, multiple: bool = False) -> SelectSelector:
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=item[CONF_QUERY_ID], label=item[CONF_QUERY_NAME])
+                    for item in queries
+                ],
+                multiple=multiple,
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+
 
 class YouTrackOptionsFlow(OptionsFlow):
     """Options of a YouTrack instance."""
@@ -304,3 +449,16 @@ class YouTrackOptionsFlow(OptionsFlow):
                 }
             ),
         )
+
+
+QUERY_SCHEMA = probatio.Schema(
+    {
+        probatio.Required(CONF_QUERY_NAME): TextSelector(),
+        probatio.Required(CONF_QUERY_TEXT): TextSelector(TextSelectorConfig(multiline=True)),
+        probatio.Required(CONF_QUERY_TOP, default=DEFAULT_QUERY_TOP): NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_QUERY_TOP, max=MAX_QUERY_TOP, step=1, mode=NumberSelectorMode.BOX
+            )
+        ),
+    }
+)

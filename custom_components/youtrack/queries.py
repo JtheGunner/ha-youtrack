@@ -4,6 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from string import Template
+from typing import TYPE_CHECKING, Any
+
+from .const import (
+    CONF_QUERY_ID,
+    CONF_QUERY_NAME,
+    CONF_QUERY_TEXT,
+    CONF_QUERY_TOP,
+    DEFAULT_QUERY_TOP,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 ASSIGNEE_FIELD = "Assignee"
 PRIORITY_FIELD = "Priority"
@@ -45,3 +57,36 @@ COUNT_QUERIES: tuple[CountQuery, ...] = (
         PRIORITY_FIELD,
     ),
 )
+
+
+@dataclass(frozen=True, slots=True)
+class CustomQuery:
+    """A named search the user added to a project; it becomes one sensor."""
+
+    id: str
+    name: str
+    text: str
+    top: int
+
+    @classmethod
+    def from_data(cls, data: Mapping[str, Any]) -> CustomQuery:
+        """Build a query from its stored form."""
+        return cls(
+            id=data[CONF_QUERY_ID],
+            name=data[CONF_QUERY_NAME],
+            text=data[CONF_QUERY_TEXT],
+            top=data.get(CONF_QUERY_TOP, DEFAULT_QUERY_TOP),
+        )
+
+    def build(self, project: str) -> str:
+        """Return the query restricted to ``project``."""
+        return scoped_query(project, self.text)
+
+
+def scoped_query(project: str, text: str) -> str:
+    """Restrict a user query to one project.
+
+    ``and`` is required: ``project: {X} (...)`` does not parse, and without the group an ``or``
+    in the user query would escape the project filter.
+    """
+    return f"project: {{{project}}} and ({text})"

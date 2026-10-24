@@ -51,7 +51,8 @@
       "title": "Add project",
       "entry_type": "Project",
       "initiate_flow": {
-        "user": "Add project"
+        "user": "Add project",
+        "reconfigure": "Manage query sensors"
       },
       "step": {
         "user": {
@@ -60,13 +61,62 @@
           "data": {
             "project_id": "Project"
           }
+        },
+        "reconfigure": {
+          "title": "Query sensors",
+          "menu_options": {
+            "add_query": "Add a query sensor",
+            "edit_query": "Edit a query sensor",
+            "remove_query": "Remove query sensors"
+          }
+        },
+        "add_query": {
+          "title": "Add query sensor",
+          "description": "The sensor shows how many issues of this project match the query. The query is limited to this project automatically. Use the YouTrack search syntax, for example `#Unresolved for: me`.",
+          "data": {
+            "name": "Name",
+            "query": "Search query",
+            "top": "Issues in attributes"
+          },
+          "data_description": {
+            "top": "How many matching issues are listed in the sensor attributes."
+          }
+        },
+        "edit_query": {
+          "title": "Edit query sensor",
+          "data": {
+            "id": "Query sensor"
+          }
+        },
+        "edit_query_details": {
+          "title": "Edit query sensor",
+          "description": "The query is limited to this project automatically.",
+          "data": {
+            "name": "Name",
+            "query": "Search query",
+            "top": "Issues in attributes"
+          },
+          "data_description": {
+            "top": "How many matching issues are listed in the sensor attributes."
+          }
+        },
+        "remove_query": {
+          "title": "Remove query sensors",
+          "data": {
+            "queries": "Query sensors to remove"
+          }
         }
       },
       "abort": {
         "entry_not_loaded": "The YouTrack connection is not ready yet. Try again in a moment.",
         "cannot_connect": "Cannot load the project list from YouTrack.",
         "no_projects_available": "There are no more projects to add.",
-        "project_unavailable": "This project is no longer available."
+        "project_unavailable": "This project is no longer available.",
+        "reconfigure_successful": "The query sensors were updated."
+      },
+      "error": {
+        "invalid_query": "YouTrack rejected the query: {error}",
+        "cannot_validate": "The query could not be checked: {error}"
       }
     }
   },

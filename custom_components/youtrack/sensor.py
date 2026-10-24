@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.helpers import entity_registry as er
 
 from .entity import YouTrackProjectEntity
 
@@ -19,8 +20,12 @@ if TYPE_CHECKING:
 
     from .coordinator import YouTrackProjectCoordinator
     from .data import YouTrackConfigEntry
+    from .queries import CustomQuery
 
 PARALLEL_UPDATES = 0
+
+QUERY_KEY_PREFIX = "query_"
+SUMMARY_LIMIT = 120
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -67,6 +72,27 @@ async def async_setup_entry(
             ],
             config_subentry_id=subentry_id,
         )
+        async_add_entities(
+            [YouTrackQuerySensor(coordinator, query) for query in coordinator.custom_queries],
+            config_subentry_id=subentry_id,
+        )
+        _remove_stale_query_sensors(hass, entry, coordinator)
+
+
+def _remove_stale_query_sensors(
+    hass: HomeAssistant, entry: YouTrackConfigEntry, coordinator: YouTrackProjectCoordinator
+) -> None:
+    """Drop the sensors of queries that were deleted."""
+    registry = er.async_get(hass)
+    wanted = {
+        f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}{query.id}"
+        for query in coordinator.custom_queries
+    }
+    prefix = f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}"
+    for registered in er.async_entries_for_config_entry(registry, entry.entry_id):
+        unique_id = registered.unique_id
+        if unique_id.startswith(prefix) and unique_id not in wanted:
+            registry.async_remove(registered.entity_id)
 
 
 class YouTrackCountSensor(YouTrackProjectEntity, SensorEntity):
@@ -87,3 +113,42 @@ class YouTrackCountSensor(YouTrackProjectEntity, SensorEntity):
     def native_value(self) -> int | None:
         """Return the current count."""
         return self.coordinator.data.counts.get(self.entity_description.key)
+
+
+class YouTrackQuerySensor(YouTrackProjectEntity, SensorEntity):
+    """The result of a user-defined search: the match count plus the first issues."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:filter-variant"
+
+    def __init__(self, coordinator: YouTrackProjectCoordinator, query: CustomQuery) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, f"{QUERY_KEY_PREFIX}{query.id}")
+        self._query = query
+        self._attr_name = query.name
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the number of matching issues."""
+        result = self.coordinator.data.queries.get(self._query.id)
+        return result.count if result else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the query and its first issues."""
+        base_url = self.coordinator.config_entry.data["url"]
+        result = self.coordinator.data.queries.get(self._query.id)
+        return {
+            "query": self._query.text,
+            "issues": [
+                {
+                    "id": issue.id,
+                    "summary": issue.summary[:SUMMARY_LIMIT],
+                    "state": issue.state,
+                    "priority": issue.priority,
+                    "assignee": issue.assignee,
+                    "url": f"{base_url}/issue/{issue.id}",
+                }
+                for issue in (result.issues if result else ())
+            ],
+        }
