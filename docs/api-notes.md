@@ -111,3 +111,14 @@ Verified live (HAY-19): `project: {KEY} and (<query>)` works. `project: {KEY} (<
 and without the group an `or` in the user query escapes the project filter. An unknown field inside the
 group (`nofield: x`) is not an error; it matches nothing (count 0). Unbalanced input such as `((` is
 accepted by the count endpoint.
+
+## Incremental refresh (`updated:` cursor)
+
+Verified live (HAY-20):
+
+- `updated: 2026-10-24T19:20 .. *` works with minute precision. Timestamps are read in the time zone of the
+  token's user (UTC on the test instance). The profile time zone is not readable through the API with
+  a permanent token, so the integration detects it: it looks up the newest issue with a one-minute window
+  in each candidate zone (UTC, then the Home Assistant zone).
+- Relative minute and hour units are unusable: `{minus 1m}` and `{minus 1h}` matched every issue.
+- Deleted and moved issues do not show up in a delta; a periodic full reload removes them.
