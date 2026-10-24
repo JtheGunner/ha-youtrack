@@ -8,7 +8,7 @@
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/JtheGunner/ha-youtrack/issues",
-  "quality_scale": "silver",
+  "quality_scale": "gold",
   "requirements": [],
   "version": "1.0.0"
 }

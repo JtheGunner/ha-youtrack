@@ -255,6 +255,30 @@ The integration polls; it does not need webhooks or a plugin on the server. With
 
 ---
 
+## 💡 Use cases
+
+- Get a notification when a critical issue appears or an issue you care about is commented.
+- Show a project's workload on a wall panel: open issues, what changed this week, who is unassigned.
+- Turn a failing device into a ticket: create an issue when an entity has been unavailable for a while.
+- Tick off tasks from the to-do card or by voice and have the issue state follow.
+- Look up a manual from the knowledge base from a script or automation.
+
+---
+
+## 🚧 Known limitations
+
+- Data is polled (default every 5 minutes); changes show up with the next poll, and events are not replayed
+  after a restart.
+- Only unresolved issues are cached for the to-do lists and the calendar, up to 1000 per project.
+- The knowledge base is read on demand and counted; articles are not copied into Home Assistant. Counts stop at
+  2000 articles per project (the `capped` attribute tells).
+- Custom queries are checked by YouTrack when saved, but a misspelled field name matches nothing instead of
+  failing.
+- One entity per issue is deliberately not offered; use query sensors, the to-do list or the calendar.
+- Blueprints are imported by address (see Examples), not installed through HACS.
+
+---
+
 ## 🧯 Troubleshooting
 
 - **"The address did not answer like a YouTrack server"** – check the URL, including a possible context path.
