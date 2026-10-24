@@ -12,10 +12,17 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import llm
 
 from .const import CONF_LLM_CREATE, CONF_PROJECT_ID, CONF_PROJECT_KEY, DOMAIN
+from .exceptions import (
+    YouTrackBadRequestError,
+    YouTrackInvalidQueryError,
+    YouTrackNotFoundError,
+)
 from .queries import is_balanced, scoped_query
 from .services import call_api, service_error
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.llm import LLMContext, ToolInput
 
@@ -34,6 +41,21 @@ _READ_ONLY = llm.ToolAnnotations(
 _CREATES = llm.ToolAnnotations(
     read_only=False, destructive=False, idempotent=False, open_world=True
 )
+
+
+async def _gather_projects[T](searches: list[Awaitable[T]]) -> list[T]:
+    """Run one search per project; a project YouTrack no longer accepts is skipped.
+
+    A project that was deleted or renamed in YouTrack must not break the search over the others.
+    Other failures, and the case that every project fails, still raise.
+    """
+    results = await asyncio.gather(*searches, return_exceptions=True)
+    skippable = (YouTrackBadRequestError, YouTrackInvalidQueryError, YouTrackNotFoundError)
+    pages = [result for result in results if not isinstance(result, BaseException)]
+    failures = [result for result in results if isinstance(result, BaseException)]
+    if failures and (not pages or not all(isinstance(f, skippable) for f in failures)):
+        raise failures[0]
+    return pages
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,8 +149,8 @@ class SearchIssuesTool(_YouTrackTool):
         pages = await call_api(
             hass,
             self._scope.entry,
-            lambda: asyncio.gather(
-                *(self._client.get_issues(scoped_query(key, query), top=limit) for key in keys)
+            lambda: _gather_projects(
+                [self._client.get_issues(scoped_query(key, query), top=limit) for key in keys]
             ),
         )
         issues = sorted(
@@ -174,11 +196,11 @@ class SearchArticlesTool(_YouTrackTool):
         pages = await call_api(
             hass,
             self._scope.entry,
-            lambda: asyncio.gather(
-                *(
+            lambda: _gather_projects(
+                [
                     self._client.get_articles(query=scoped_query(key, query), top=limit)
                     for key in keys
-                )
+                ]
             ),
         )
         articles = sorted(

@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.4] - 2026-10-25
+
+### Fixed
+
+- The Assist search tools no longer fail completely when one configured project was deleted or renamed in YouTrack; that
+  project is skipped and the others still answer. The search still fails if every project fails or if the token is rejected.
+
 ## [1.1.3] - 2026-10-25
 
 ### Changed
