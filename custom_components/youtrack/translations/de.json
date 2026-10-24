@@ -403,5 +403,18 @@
     "invalid_article_id": {
       "message": "Die Artikel-ID „{article_id}“ ist ungültig."
     }
+  },
+  "issues": {
+    "project_missing": {
+      "title": "Das Projekt {project} existiert in YouTrack nicht mehr",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Das Projekt {project} existiert in YouTrack nicht mehr",
+            "description": "Das Projekt {project} von {instance} wurde nicht gefunden. Es wurde gelöscht oder dein Token hat keinen Zugriff mehr darauf. Seine Entitäten werden nicht aktualisiert. Wähle **Absenden**, um das Projekt aus Home Assistant zu entfernen, oder stelle den Zugriff in YouTrack wieder her und lade die Integration neu."
+          }
+        }
+      }
+    }
   }
 }

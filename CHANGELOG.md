@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A repair issue when a configured project no longer exists in YouTrack; confirming it removes the project.
+  The remaining projects keep loading.
+- Renamed projects are picked up automatically.
+- Devices of projects that are no longer set up can be deleted from the device page.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

@@ -209,6 +209,10 @@ you can call from automations or voice assistants.
 ## 🧯 Troubleshooting
 
 - **"The address did not answer like a YouTrack server"** – check the URL, including a possible context path.
+- **A repair says a project no longer exists** – YouTrack no longer returns that project (deleted, or the
+  token lost access). The other projects keep working. Confirm the repair to remove the project, or restore
+  access and reload the integration; the repair then disappears. Renamed projects are picked up automatically.
+- **Expired or revoked token** – Home Assistant asks for a new token (reauthentication) on the integration page.
 - **Diagnostics** – download them from the integration page; the token and address are redacted.
 - **Logs** – add `custom_components.youtrack: debug` under `logger:` in `configuration.yaml`. Remove tokens
   before sharing logs.
