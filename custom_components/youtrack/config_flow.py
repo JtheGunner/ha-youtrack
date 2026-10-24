@@ -425,11 +425,15 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         """Remove queries; their sensors disappear."""
         queries = self._queries()
+        errors: dict[str, str] = {}
         if user_input is not None:
             drop = set(user_input[CONF_QUERIES])
-            return self._save_queries([q for q in queries if q[CONF_QUERY_ID] not in drop])
+            if drop:
+                return self._save_queries([q for q in queries if q[CONF_QUERY_ID] not in drop])
+            errors[CONF_QUERIES] = "nothing_selected"
         return self.async_show_form(
             step_id="remove_query",
+            errors=errors,
             data_schema=probatio.Schema(
                 {
                     probatio.Required(CONF_QUERIES): self._query_selector(queries, multiple=True),
@@ -455,7 +459,7 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
                     for item in queries
                 ],
                 multiple=multiple,
-                mode=SelectSelectorMode.DROPDOWN,
+                mode=SelectSelectorMode.LIST if multiple else SelectSelectorMode.DROPDOWN,
             )
         )
 
