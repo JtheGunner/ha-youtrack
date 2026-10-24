@@ -1,0 +1,34 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+    validations:
+      required: true
+  - type: input
+    id: youtrack_version
+    attributes:
+      label: YouTrack version
+      description: Cloud or self-hosted, and the version if known
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Expected and actual behaviour, plus steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Remove tokens and private URLs before posting
+      render: text

@@ -1,0 +1,11 @@
+{
+  "domain": "youtrack",
+  "name": "YouTrack",
+  "codeowners": ["@JtheGunner"],
+  "documentation": "https://github.com/JtheGunner/ha-youtrack",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/JtheGunner/ha-youtrack/issues",
+  "requirements": [],
+  "version": "0.0.1"
+}
