@@ -23,5 +23,3 @@ jobs:
       - uses: hacs/action@22.5.0
         with:
           category: integration
-          # Remove together with the brand assets (HAY-32); required for the HACS default store.
-          ignore: brands

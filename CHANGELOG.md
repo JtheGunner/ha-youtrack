@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Brand assets (icon and logo, light and dark) shown in Home Assistant and HACS.
 - A repair issue when a configured project no longer exists in YouTrack; confirming it removes the project.
   The remaining projects keep loading.
 - Renamed projects are picked up automatically.

@@ -4,9 +4,7 @@ rules:
   appropriate-polling:
     status: done
     comment: Five minutes by default, configurable; the knowledge base is polled six times slower.
-  brands:
-    status: todo
-    comment: Brand assets are added with the HACS default submission.
+  brands: done
   common-modules: done
   config-flow-test-coverage: done
   config-flow: done
