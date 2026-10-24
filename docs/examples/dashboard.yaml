@@ -1,0 +1,55 @@
+# Example dashboard view for one YouTrack project.
+#
+# Replace "demo_project" with the slug of your project device (Settings > Devices & services >
+# YouTrack > your project) and paste the view into the raw configuration editor of a dashboard.
+title: YouTrack
+path: youtrack
+cards:
+  - type: vertical-stack
+    cards:
+      - type: markdown
+        content: "## Demo Project"
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: tile
+            entity: sensor.demo_project_open_issues
+            name: Open
+          - type: tile
+            entity: sensor.demo_project_unassigned_issues
+            name: Unassigned
+          - type: tile
+            entity: sensor.demo_project_critical_open_issues
+            name: Critical
+          - type: tile
+            entity: sensor.demo_project_created_in_the_last_7_days
+            name: Created (7 days)
+          - type: tile
+            entity: sensor.demo_project_resolved_in_the_last_7_days
+            name: Resolved (7 days)
+          - type: tile
+            entity: binary_sensor.demo_project_has_critical_open_issues
+            name: Critical alert
+  - type: gauge
+    entity: sensor.demo_project_open_issues
+    name: Open issues
+    min: 0
+    max: 100
+    severity:
+      green: 0
+      yellow: 40
+      red: 70
+  - type: todo-list
+    entity: todo.demo_project_open_issues
+    title: Open issues
+  - type: history-graph
+    title: Open vs. resolved
+    hours_to_show: 168
+    entities:
+      - sensor.demo_project_open_issues
+      - sensor.demo_project_resolved_issues
+  - type: entities
+    title: Latest activity
+    entities:
+      - event.demo_project_issue_activity

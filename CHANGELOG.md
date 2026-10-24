@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Examples: a project dashboard and two automation blueprints (notify on more critical issues, create an
+  issue for an entity that stays unavailable).
 - Actions: `youtrack.create_issue`, `add_comment`, `transition`, `assign` and `log_work`.
 - To-do lists: the open issues of each project and the issues of each query sensor. Checking or unchecking
   an item changes the issue state (configurable); creating issues from new items is an opt-in option.

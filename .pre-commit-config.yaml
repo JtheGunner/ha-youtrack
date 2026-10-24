@@ -11,6 +11,8 @@ repos:
       - id: check-json
         exclude: ^tests/fixtures/
       - id: check-yaml
+        # Blueprints use the !input tag, which the safe loader rejects.
+        args: [--unsafe]
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-merge-conflict
