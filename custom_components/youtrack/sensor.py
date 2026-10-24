@@ -28,12 +28,26 @@ class YouTrackCountSensorDescription(SensorEntityDescription):
     """Describes a sensor that exposes one issue count."""
 
 
-COUNT_SENSORS: tuple[YouTrackCountSensorDescription, ...] = (
-    YouTrackCountSensorDescription(
-        key="total",
-        translation_key="issues_total",
-        state_class=SensorStateClass.TOTAL,
-    ),
+def _count(key: str) -> YouTrackCountSensorDescription:
+    return YouTrackCountSensorDescription(
+        key=key,
+        translation_key=f"issues_{key}",
+        state_class=SensorStateClass.MEASUREMENT,
+    )
+
+
+COUNT_SENSORS: tuple[YouTrackCountSensorDescription, ...] = tuple(
+    _count(key)
+    for key in (
+        "total",
+        "open",
+        "resolved",
+        "unassigned",
+        "overdue",
+        "created_7d",
+        "resolved_7d",
+        "critical_open",
+    )
 )
 
 
@@ -42,10 +56,15 @@ async def async_setup_entry(
     entry: YouTrackConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the sensors of every project."""
+    """Add the count sensors every project supports."""
     for subentry_id, coordinator in entry.runtime_data.coordinators.items():
+        supported = set(coordinator.active_counts)
         async_add_entities(
-            [YouTrackCountSensor(coordinator, description) for description in COUNT_SENSORS],
+            [
+                YouTrackCountSensor(coordinator, description)
+                for description in COUNT_SENSORS
+                if description.key in supported
+            ],
             config_subentry_id=subentry_id,
         )
 

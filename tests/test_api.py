@@ -413,3 +413,45 @@ def test_issue_ignores_unusable_custom_fields() -> None:
 
     assert issue.state is None
     assert issue.priority is None
+
+
+async def test_project_fields(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """The custom fields of a project are listed with their types."""
+    aioclient_mock.get(
+        f"{BASE}/api/admin/projects/0-1/customFields", json=load_json_fixture("project_fields.json")
+    )
+
+    fields = await make_client().get_project_fields("0-1")
+
+    assert [(f.name, f.field_type) for f in fields] == [
+        ("Priority", "enum[1]"),
+        ("State", "state[1]"),
+        ("Assignee", "user[1]"),
+        ("Due Date", "date"),
+    ]
+
+
+@pytest.mark.parametrize("payload", [{}, [{"nofield": 1}], [{"field": {"fieldType": {"id": "x"}}}]])
+async def test_project_fields_malformed(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker, payload: object
+) -> None:
+    """Unexpected payloads are response errors."""
+    aioclient_mock.get(f"{BASE}/api/admin/projects/0-1/customFields", json=payload)
+
+    with pytest.raises(YouTrackResponseError):
+        await make_client().get_project_fields("0-1")
+
+
+async def test_project_field_without_type(
+    make_client: ClientFactory, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A field without type information gets an empty type."""
+    aioclient_mock.get(
+        f"{BASE}/api/admin/projects/0-1/customFields", json=[{"field": {"name": "Odd"}}]
+    )
+
+    (field,) = await make_client().get_project_fields("0-1")
+
+    assert field.field_type == ""

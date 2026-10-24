@@ -15,16 +15,17 @@ from .const import (
     CONF_PROJECT_ID,
     CONF_PROJECT_KEY,
     CONF_SCAN_INTERVAL,
-    COUNT_QUERIES,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
 from .exceptions import (
     YouTrackAuthError,
     YouTrackError,
+    YouTrackInvalidQueryError,
     YouTrackPermissionError,
     YouTrackRateLimitError,
 )
+from .queries import COUNT_QUERIES, DUE_DATE_FIELD_NAMES, CountQuery
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -58,6 +59,9 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self.project_name: str = subentry.title
         self.subentry_id = subentry.subentry_id
         self._client = entry.runtime_data.client
+        self._field_names: set[str] | None = None
+        self._due_field: str | None = None
+        self._invalid_queries: set[str] = set()
         super().__init__(
             hass,
             _LOGGER,
@@ -68,15 +72,59 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             ),
         )
 
-    async def _async_update_data(self) -> ProjectData:
-        """Fetch all counts of the project."""
+    @property
+    def active_counts(self) -> list[str]:
+        """Return the keys of the counts this project supports."""
+        return [query.key for query in self._supported_queries()]
+
+    def _supported_queries(self) -> list[CountQuery]:
+        fields = self._field_names or set()
+        return [
+            query
+            for query in COUNT_QUERIES
+            if query.requires is None
+            or (query.requires == "due" and self._due_field)
+            or query.requires in fields
+        ]
+
+    async def _load_fields(self) -> None:
+        """Remember which custom fields the project has (needed to pick valid queries)."""
+        fields = await self._client.get_project_fields(self.project_id)
+        self._field_names = {field.name for field in fields}
+        self._due_field = next(
+            (
+                field.name
+                for field in fields
+                if field.field_type.startswith("date")
+                and field.name.lower() in DUE_DATE_FIELD_NAMES
+            ),
+            None,
+        )
+
+    async def _count(self, query: CountQuery) -> int | None:
+        """Run one count; a query YouTrack rejects yields None instead of failing the poll."""
+        text = query.build(self.project_key, self._due_field)
         try:
-            values = await asyncio.gather(
-                *(
-                    self._client.count_issues(query.format(project=self.project_key))
-                    for query in COUNT_QUERIES.values()
+            return await self._client.count_issues(text)
+        except YouTrackInvalidQueryError as err:
+            if query.key not in self._invalid_queries:
+                self._invalid_queries.add(query.key)
+                _LOGGER.warning(
+                    "YouTrack rejected the %s count for %s (%s): %s",
+                    query.key,
+                    self.project_key,
+                    text,
+                    err,
                 )
-            )
+            return None
+
+    async def _async_update_data(self) -> ProjectData:
+        """Fetch all supported counts of the project."""
+        try:
+            if self._field_names is None:
+                await self._load_fields()
+            queries = self._supported_queries()
+            values = await asyncio.gather(*(self._count(query) for query in queries))
         except (YouTrackAuthError, YouTrackPermissionError) as err:
             raise ConfigEntryAuthFailed("YouTrack rejected the stored token") from err
         except YouTrackRateLimitError as err:
@@ -87,7 +135,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         previous = self.data.counts if self.data else {}
         return ProjectData(
             counts={
-                key: value if value is not None else previous.get(key)
-                for key, value in zip(COUNT_QUERIES, values, strict=True)
+                query.key: value if value is not None else previous.get(query.key)
+                for query, value in zip(queries, values, strict=True)
             }
         )

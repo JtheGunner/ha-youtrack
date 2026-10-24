@@ -16,10 +16,29 @@ from custom_components.youtrack.const import (
     DOMAIN,
     SUBENTRY_PROJECT,
 )
-from custom_components.youtrack.models import Project, ServerInfo, User
+from custom_components.youtrack.models import Project, ProjectField, ServerInfo, User
 
 URL = "https://yt.example.com"
 TOKEN = "perm:test-token"
+
+
+async def fake_count(query: str) -> int | None:
+    """Return a stable count per kind of query."""
+    if "Assignee: Unassigned" in query:
+        return 3
+    if "Priority:" in query:
+        return 2
+    if "resolved date" in query:
+        return 4
+    if "created:" in query:
+        return 5
+    if "minus 1d}" in query and "#Unresolved" in query and ".." in query:
+        return 1
+    if query.endswith("#Unresolved"):
+        return 10
+    if query.endswith("#Resolved"):
+        return 30
+    return 42
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +53,12 @@ def mock_client() -> Generator[MagicMock]:
     client = client_class.return_value
     client.get_server_info.return_value = ServerInfo(version="2026.2", build="1")
     client.get_current_user.return_value = User(login="example.user", name="Example User")
-    client.count_issues.return_value = 42
+    client.count_issues.side_effect = fake_count
+    client.get_project_fields.return_value = [
+        ProjectField(name="Priority", field_type="enum[1]"),
+        ProjectField(name="State", field_type="state[1]"),
+        ProjectField(name="Assignee", field_type="user[1]"),
+    ]
     client.get_projects.return_value = [
         Project(id="0-1", name="Demo Project", short_name="DEMO", archived=False),
         Project(id="0-2", name="Operations", short_name="OPS", archived=False),
