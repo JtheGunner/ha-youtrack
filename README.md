@@ -21,7 +21,7 @@
 |---|---|---|
 | 📊 | Issue statistics per project: total, open, resolved, unassigned, overdue, created and resolved in the last 7 days, critical open | ✅ available |
 | 🚨 | Flags for *has overdue issues* and *has critical open issues* | ✅ available |
-| 🔎 | Query sensors: any YouTrack search as a sensor | 🛠 planned |
+| 🔎 | Query sensors: any YouTrack search as a sensor, with the first issues as attributes | ✅ available |
 | ✅ | Open issues as a Home Assistant to-do list | 🛠 planned |
 | 🔔 | Events when issues are created, resolved or commented | 🛠 planned |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | 🛠 planned |
@@ -80,6 +80,17 @@ are not created.
 | ✔️ | Resolved in the last 7 days | | |
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
+
+### 🔎 Query sensors
+
+Open the project in **Settings → Devices & services → YouTrack**, choose **⋮ → Manage query sensors**
+and add a named YouTrack search such as `#Unresolved for: me`. The sensor shows the number of matching
+issues; its attributes list the first issues (default 10, at most 25) with id, summary, state, priority,
+assignee and link. The query is limited to the project automatically.
+
+> [!NOTE]
+> YouTrack validates the syntax when you save, but accepts some unknown field names and simply matches
+> nothing. Check a new query against the count you see in YouTrack.
 
 > [!NOTE]
 > Counts are computed by YouTrack. Right after the first request YouTrack may still be calculating a number;

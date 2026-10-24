@@ -16,7 +16,9 @@ from custom_components.youtrack.const import (
     DOMAIN,
     SUBENTRY_PROJECT,
 )
-from custom_components.youtrack.models import Project, ProjectField, ServerInfo, User
+from custom_components.youtrack.models import Issue, Project, ProjectField, ServerInfo, User
+
+from .common import load_json_fixture
 
 URL = "https://yt.example.com"
 TOKEN = "perm:test-token"
@@ -54,6 +56,9 @@ def mock_client() -> Generator[MagicMock]:
     client.get_server_info.return_value = ServerInfo(version="2026.2", build="1")
     client.get_current_user.return_value = User(login="example.user", name="Example User")
     client.count_issues.side_effect = fake_count
+    client.get_issues.return_value = [
+        Issue.from_json(item) for item in load_json_fixture("issues.json")
+    ]
     client.get_project_fields.return_value = [
         ProjectField(name="Priority", field_type="enum[1]"),
         ProjectField(name="State", field_type="state[1]"),

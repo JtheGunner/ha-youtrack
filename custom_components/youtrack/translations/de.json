@@ -51,7 +51,8 @@
       "title": "Projekt hinzufügen",
       "entry_type": "Projekt",
       "initiate_flow": {
-        "user": "Projekt hinzufügen"
+        "user": "Projekt hinzufügen",
+        "reconfigure": "Abfrage-Sensoren verwalten"
       },
       "step": {
         "user": {
@@ -60,13 +61,62 @@
           "data": {
             "project_id": "Projekt"
           }
+        },
+        "reconfigure": {
+          "title": "Abfrage-Sensoren",
+          "menu_options": {
+            "add_query": "Abfrage-Sensor hinzufügen",
+            "edit_query": "Abfrage-Sensor bearbeiten",
+            "remove_query": "Abfrage-Sensoren entfernen"
+          }
+        },
+        "add_query": {
+          "title": "Abfrage-Sensor hinzufügen",
+          "description": "Der Sensor zeigt, wie viele Tickets dieses Projekts zur Abfrage passen. Die Abfrage wird automatisch auf dieses Projekt beschränkt. Verwende die YouTrack-Suchsyntax, zum Beispiel `#Unresolved for: me`.",
+          "data": {
+            "name": "Name",
+            "query": "Suchanfrage",
+            "top": "Tickets in den Attributen"
+          },
+          "data_description": {
+            "top": "Wie viele passende Tickets in den Sensor-Attributen aufgelistet werden."
+          }
+        },
+        "edit_query": {
+          "title": "Abfrage-Sensor bearbeiten",
+          "data": {
+            "id": "Abfrage-Sensor"
+          }
+        },
+        "edit_query_details": {
+          "title": "Abfrage-Sensor bearbeiten",
+          "description": "Die Abfrage wird automatisch auf dieses Projekt beschränkt.",
+          "data": {
+            "name": "Name",
+            "query": "Suchanfrage",
+            "top": "Tickets in den Attributen"
+          },
+          "data_description": {
+            "top": "Wie viele passende Tickets in den Sensor-Attributen aufgelistet werden."
+          }
+        },
+        "remove_query": {
+          "title": "Abfrage-Sensoren entfernen",
+          "data": {
+            "queries": "Zu entfernende Abfrage-Sensoren"
+          }
         }
       },
       "abort": {
         "entry_not_loaded": "Die YouTrack-Verbindung ist noch nicht bereit. Versuche es gleich noch einmal.",
         "cannot_connect": "Die Projektliste konnte nicht von YouTrack geladen werden.",
         "no_projects_available": "Es gibt keine weiteren Projekte zum Hinzufügen.",
-        "project_unavailable": "Dieses Projekt ist nicht mehr verfügbar."
+        "project_unavailable": "Dieses Projekt ist nicht mehr verfügbar.",
+        "reconfigure_successful": "Die Abfrage-Sensoren wurden aktualisiert."
+      },
+      "error": {
+        "invalid_query": "YouTrack hat die Abfrage abgelehnt: {error}",
+        "cannot_validate": "Die Abfrage konnte nicht geprüft werden: {error}"
       }
     }
   },

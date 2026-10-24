@@ -104,3 +104,10 @@ need a YouTrack workflow using the `http` module. Not tested here; tracked in th
 5. Event entity: build from `CustomFieldCategory` (with `added`/`removed`) plus created/resolved/comment
    categories; verify comment-to-issue resolution first.
 6. Knowledge base: shapes and permissions still to be verified (T20).
+
+## Scoping a user query to a project
+
+Verified live (HAY-19): `project: {KEY} and (<query>)` works. `project: {KEY} (<query>)` fails to parse,
+and without the group an `or` in the user query escapes the project filter. An unknown field inside the
+group (`nofield: x`) is not an error; it matches nothing (count 0). Unbalanced input such as `((` is
+accepted by the count endpoint.
