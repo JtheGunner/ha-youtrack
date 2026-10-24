@@ -22,3 +22,6 @@ htmlcov/
 # Local planning documents
 /docs/plans/
 /docs/superpowers/
+
+# Local Home Assistant dev config
+/config/

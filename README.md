@@ -40,7 +40,7 @@ Each YouTrack instance is configured once; every project you add becomes its own
 
 ## 🧰 Requirements
 
-- Home Assistant 2025.12 or newer
+- Home Assistant 2026.10 or newer
 - [HACS](https://hacs.xyz) for installation
 - A YouTrack instance reachable from Home Assistant and a [permanent token](https://www.jetbrains.com/help/youtrack/server/manage-permanent-token.html)
 

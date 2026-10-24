@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Run lint, format check, type check and tests. Extra arguments are passed to pytest.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy
+.venv/bin/pytest "$@"
