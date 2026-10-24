@@ -44,3 +44,6 @@ DUE_DATE_FIELD_NAMES = frozenset({"due date", "due"})
 CONF_WATCH = "watch"
 WATCH_QUERY_ID = "_watch"
 MAX_WATCHED = 25
+
+# Whether Assist conversation agents may create issues (reading is always allowed).
+CONF_LLM_CREATE = "llm_create"

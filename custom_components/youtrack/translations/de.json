@@ -137,12 +137,14 @@
           "scan_interval": "Aktualisierungsintervall (Minuten)",
           "resolved_state": "Status für abgehakte Einträge",
           "reopened_state": "Status für wieder geöffnete Einträge",
-          "todo_create": "Neue To-do-Einträge als Tickets anlegen"
+          "todo_create": "Neue To-do-Einträge als Tickets anlegen",
+          "llm_create": "Sprachassistenten dürfen Tickets anlegen"
         },
         "data_description": {
           "resolved_state": "Abhaken setzt das Ticket auf diesen Status.",
           "reopened_state": "Das Abhaken zurücknehmen setzt das Ticket auf diesen Status.",
-          "todo_create": "Neue Einträge der Liste offener Tickets werden als Tickets im Projekt angelegt."
+          "todo_create": "Neue Einträge der Liste offener Tickets werden als Tickets im Projekt angelegt.",
+          "llm_create": "Assist-Konversationsagenten, die die YouTrack-API nutzen, können Tickets und Artikel suchen. Aktiviere dies, damit sie auch Tickets anlegen dürfen."
         }
       }
     }
@@ -415,6 +417,12 @@
     },
     "invalid_article_id": {
       "message": "Die Artikel-ID „{article_id}“ ist ungültig."
+    },
+    "unknown_llm_project": {
+      "message": "Das Projekt „{project}“ ist in Home Assistant nicht eingerichtet."
+    },
+    "llm_project_required": {
+      "message": "Es sind mehrere Projekte eingerichtet; gib an, zu welchem Projekt das Ticket gehört."
     }
   },
   "issues": {

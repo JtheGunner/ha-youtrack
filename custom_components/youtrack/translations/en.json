@@ -137,12 +137,14 @@
           "scan_interval": "Update interval (minutes)",
           "resolved_state": "State for checked items",
           "reopened_state": "State for unchecked items",
-          "todo_create": "Create issues from new to-do items"
+          "todo_create": "Create issues from new to-do items",
+          "llm_create": "Let voice assistants create issues"
         },
         "data_description": {
           "resolved_state": "Checking an item sets the issue to this state.",
           "reopened_state": "Unchecking an item sets the issue to this state.",
-          "todo_create": "Adds items to the open issues list as new issues of that project."
+          "todo_create": "Adds items to the open issues list as new issues of that project.",
+          "llm_create": "Assist conversation agents that use the YouTrack API can search issues and articles. Turn this on to also let them create issues."
         }
       }
     }
@@ -415,6 +417,12 @@
     },
     "invalid_article_id": {
       "message": "The article ID \"{article_id}\" is not valid."
+    },
+    "unknown_llm_project": {
+      "message": "The project \"{project}\" is not set up in Home Assistant."
+    },
+    "llm_project_required": {
+      "message": "Several projects are set up; say which project the issue belongs to."
     }
   },
   "issues": {
