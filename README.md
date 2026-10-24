@@ -36,13 +36,21 @@ Each YouTrack instance is set up once; every project you add becomes its own dev
 
 ## 📦 Installation
 
+YouTrack is part of the HACS default repositories:
+
+1. Open **HACS** and search for **YouTrack**.
+2. Install it and restart Home Assistant.
+
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=JtheGunner&repository=ha-youtrack&category=integration)
 
-Click the button, or add the repository by hand:
+<details>
+<summary>Fallback: add it as a custom repository</summary>
 
 1. Open **HACS → ⋮ → Custom repositories**.
 2. Add `https://github.com/JtheGunner/ha-youtrack` with the category **Integration**.
 3. Install **YouTrack** and restart Home Assistant.
+
+</details>
 
 Requires Home Assistant **2026.10** or newer.
 
