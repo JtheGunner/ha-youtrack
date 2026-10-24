@@ -19,6 +19,16 @@ Open an [issue](https://github.com/JtheGunner/ha-youtrack/issues/new/choose) and
 3. Keep changes focused and include tests for behaviour changes.
 4. Open a pull request that explains what changed and how you tested it.
 
+## Local development
+
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.14.
+
+```bash
+scripts/setup     # create .venv, install dependencies and git hooks
+scripts/check     # ruff, mypy and pytest (extra arguments go to pytest)
+scripts/develop   # start Home Assistant on http://localhost:8123 with the integration mounted
+```
+
 ## Commit messages
 
 Use `<type>: <description>` in English, imperative mood, subject up to about 72 characters.

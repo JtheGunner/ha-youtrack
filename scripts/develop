@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Start a local Home Assistant with this integration mounted.
+# The configuration lives in ./config (ignored by git).
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+mkdir -p config/custom_components
+ln -sfn "$PWD/custom_components/youtrack" config/custom_components/youtrack
+
+if [ ! -f config/configuration.yaml ]; then
+    .venv/bin/hass --script ensure_config -c config
+fi
+
+if ! grep -q "custom_components.youtrack" config/configuration.yaml; then
+    cat >> config/configuration.yaml <<'YAML'
+
+logger:
+  default: info
+  logs:
+    custom_components.youtrack: debug
+YAML
+fi
+
+exec .venv/bin/hass -c config
