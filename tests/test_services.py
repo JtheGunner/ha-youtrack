@@ -18,7 +18,9 @@ from custom_components.youtrack.exceptions import (
     YouTrackNotFoundError,
     YouTrackPermissionError,
 )
+from custom_components.youtrack.models import Article
 
+from .common import load_json_fixture
 from .conftest import URL
 
 
@@ -313,3 +315,112 @@ async def test_no_instance_loaded(hass: HomeAssistant, mock_client: MagicMock) -
         await _call(hass, "add_comment", {"issue_id": "DEMO-1", "text": "x"})
 
     assert error.value.translation_key == "not_loaded"
+
+
+async def test_search_articles_in_a_project(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """The search is scoped to the project and returns summaries without content."""
+    device_id = await _setup(hass, mock_project_entry)
+
+    response = await _call(
+        hass,
+        "search_articles",
+        {"query": "heating", "device_id": device_id, "limit": 5},
+        return_response=True,
+    )
+
+    mock_client.get_articles.assert_awaited_once_with(query="project: {DEMO} and (heating)", top=5)
+    assert isinstance(response, dict)
+    data: dict[str, Any] = dict(response)
+    assert [item["id"] for item in data["articles"]] == ["DEMO-A-2", "DEMO-A-1"]
+    assert data["articles"][0]["url"] == f"{URL}/articles/DEMO-A-2"
+    assert "content" not in data["articles"][0]
+
+
+async def test_search_articles_without_project_uses_the_only_instance(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Without a project the query is passed on unchanged."""
+    await _setup(hass, mock_project_entry)
+
+    await _call(hass, "search_articles", {"query": "heating"}, return_response=True)
+
+    mock_client.get_articles.assert_awaited_once_with(query="heating", top=10)
+
+
+async def test_search_articles_limit_is_bounded(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A limit above the maximum is refused."""
+    await _setup(hass, mock_project_entry)
+
+    with pytest.raises(Exception, match="value must be at most 50"):
+        await _call(hass, "search_articles", {"query": "x", "limit": 500}, return_response=True)
+
+
+async def test_get_article_returns_content(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """The article comes back with its Markdown content."""
+    await _setup(hass, mock_project_entry)
+    mock_client.get_article.return_value = _article("# Heating\nTurn it on.")
+
+    response = await _call(hass, "get_article", {"article_id": "DEMO-A-2"}, return_response=True)
+
+    mock_client.get_article.assert_awaited_once_with("DEMO-A-2")
+    assert isinstance(response, dict)
+    data: dict[str, Any] = dict(response)
+    assert data["content"] == "# Heating\nTurn it on."
+    assert data["truncated"] is False
+    assert data["title"] == "Heating manual"
+
+
+async def test_get_article_truncates_long_content(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Content beyond the maximum length is cut and flagged."""
+    await _setup(hass, mock_project_entry)
+    mock_client.get_article.return_value = _article("x" * 300)
+
+    response = await _call(
+        hass, "get_article", {"article_id": "DEMO-A-2", "max_length": 100}, return_response=True
+    )
+
+    assert isinstance(response, dict)
+    data: dict[str, Any] = dict(response)
+    assert data["content"] == "x" * 100
+    assert data["truncated"] is True
+
+
+async def test_get_article_without_content(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """An article without text gives an empty string, not an error."""
+    await _setup(hass, mock_project_entry)
+    mock_client.get_article.return_value = _article(None)
+
+    response = await _call(hass, "get_article", {"article_id": "DEMO-A-2"}, return_response=True)
+
+    assert isinstance(response, dict)
+    data: dict[str, Any] = dict(response)
+    assert data["content"] == ""
+    assert data["truncated"] is False
+
+
+async def test_get_article_not_found_and_bad_id(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Unknown ids and malformed ids give readable errors."""
+    await _setup(hass, mock_project_entry)
+    mock_client.get_article.side_effect = YouTrackNotFoundError("404")
+
+    with pytest.raises(ServiceValidationError, match="could not find"):
+        await _call(hass, "get_article", {"article_id": "DEMO-A-99"}, return_response=True)
+    with pytest.raises(ServiceValidationError, match="not valid"):
+        await _call(hass, "get_article", {"article_id": "../issues"}, return_response=True)
+
+
+def _article(content: str | None) -> Article:
+    item = {**load_json_fixture("articles.json")[0], "content": content}
+    return Article.from_json(item)

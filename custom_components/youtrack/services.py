@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import probatio
 from homeassistant.core import (
@@ -25,6 +25,7 @@ from .exceptions import (
     YouTrackNotFoundError,
     YouTrackPermissionError,
 )
+from .queries import scoped_query
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
     from .coordinator import YouTrackProjectCoordinator
     from .data import YouTrackConfigEntry
+    from .models import Article
 
 ATTR_DEVICE_ID = "device_id"
 ATTR_ISSUE_ID = "issue_id"
@@ -52,12 +54,25 @@ SERVICE_ADD_COMMENT = "add_comment"
 SERVICE_TRANSITION = "transition"
 SERVICE_ASSIGN = "assign"
 SERVICE_LOG_WORK = "log_work"
+SERVICE_SEARCH_ARTICLES = "search_articles"
+SERVICE_GET_ARTICLE = "get_article"
+
+ATTR_QUERY = "query"
+ATTR_LIMIT = "limit"
+ATTR_ARTICLE_ID = "article_id"
+ATTR_MAX_LENGTH = "max_length"
+
+DEFAULT_SEARCH_LIMIT = 10
+MAX_SEARCH_LIMIT = 50
+DEFAULT_MAX_LENGTH = 4000
+MAX_MAX_LENGTH = 50000
 
 UNASSIGNED = "Unassigned"
 DEFAULT_STATE_FIELD = "State"
 _ISSUE_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_]*-\d+$")
 _DURATION = re.compile(r"^(\d+\s*[wdhm]\s*)+$")
 # YouTrack commands have no quoting; anything that could start a second command is refused.
+_ARTICLE_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 _COMMAND_VALUE = re.compile(r"^[^\s{}\"\\][^{}\"\\\r\n]*$")
 
 _DEVICE_IDS = probatio.Schema(probatio.All(cv.ensure_list, [cv.string]))
@@ -92,6 +107,24 @@ LOG_WORK_SCHEMA = probatio.Schema(
         probatio.Optional(ATTR_TEXT): cv.string,
         probatio.Optional(ATTR_DATE): cv.datetime,
         probatio.Optional(ATTR_WORK_TYPE): cv.string,
+    }
+)
+SEARCH_ARTICLES_SCHEMA = probatio.Schema(
+    {
+        probatio.Required(ATTR_QUERY): cv.string,
+        probatio.Optional(ATTR_DEVICE_ID): _DEVICE_IDS,
+        probatio.Optional(ATTR_LIMIT, default=DEFAULT_SEARCH_LIMIT): probatio.All(
+            cv.positive_int, probatio.Range(min=1, max=MAX_SEARCH_LIMIT)
+        ),
+    }
+)
+GET_ARTICLE_SCHEMA = probatio.Schema(
+    {
+        probatio.Required(ATTR_ARTICLE_ID): cv.string,
+        probatio.Optional(ATTR_DEVICE_ID): _DEVICE_IDS,
+        probatio.Optional(ATTR_MAX_LENGTH, default=DEFAULT_MAX_LENGTH): probatio.All(
+            cv.positive_int, probatio.Range(min=100, max=MAX_MAX_LENGTH)
+        ),
     }
 )
 
@@ -254,6 +287,48 @@ async def _log_work(call: ServiceCall) -> None:
     )
 
 
+def _article_summary(article: Article, base_url: str) -> dict[str, Any]:
+    return {
+        "id": article.readable_id,
+        "title": article.summary,
+        "project": article.project,
+        "author": article.author,
+        "updated": article.updated.isoformat() if article.updated else None,
+        "url": f"{base_url}/articles/{article.readable_id}",
+    }
+
+
+async def _search_articles(call: ServiceCall) -> ServiceResponse:
+    hass, data = call.hass, call.data
+    device_ids = data.get(ATTR_DEVICE_ID, [])
+    query = data[ATTR_QUERY].strip()
+    if device_ids:
+        coordinator = _project_coordinator(hass, device_ids)
+        entry, query = coordinator.config_entry, scoped_query(coordinator.project_key, query)
+    else:
+        entry = _entry(hass, [])
+    client = entry.runtime_data.client
+    limit = data[ATTR_LIMIT]
+    articles = await call_api(hass, entry, lambda: client.get_articles(query=query, top=limit))
+    return {"articles": [_article_summary(item, entry.data["url"]) for item in articles]}
+
+
+async def _get_article(call: ServiceCall) -> ServiceResponse:
+    hass, data = call.hass, call.data
+    entry = _entry(hass, data.get(ATTR_DEVICE_ID, []))
+    article_id = data[ATTR_ARTICLE_ID].strip()
+    if not _ARTICLE_ID.match(article_id):
+        raise service_error("invalid_article_id", article_id=article_id)
+    article = await call_api(hass, entry, lambda: entry.runtime_data.client.get_article(article_id))
+    content = article.content or ""
+    limit = data[ATTR_MAX_LENGTH]
+    return {
+        **_article_summary(article, entry.data["url"]),
+        "content": content[:limit],
+        "truncated": len(content) > limit,
+    }
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the actions."""
@@ -271,3 +346,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
         (SERVICE_LOG_WORK, _log_work, LOG_WORK_SCHEMA),
     ):
         hass.services.async_register(DOMAIN, name, handler, schema=schema)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEARCH_ARTICLES,
+        _search_articles,
+        schema=SEARCH_ARTICLES_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_ARTICLE,
+        _get_article,
+        schema=GET_ARTICLE_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )

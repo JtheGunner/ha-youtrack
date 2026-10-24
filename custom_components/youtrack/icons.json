@@ -72,6 +72,12 @@
     },
     "log_work": {
       "service": "mdi:timer-plus"
+    },
+    "search_articles": {
+      "service": "mdi:book-search"
+    },
+    "get_article": {
+      "service": "mdi:book-open-variant"
     }
   }
 }

@@ -74,6 +74,9 @@ def mock_client() -> Generator[MagicMock]:
     client.get_current_user.return_value = User(login="example.user", name="Example User")
     client.count_issues.side_effect = fake_count
     client.get_activities.return_value = ActivityPage([], 0)
+    client.get_articles.return_value = [
+        Article.from_json(item) for item in load_json_fixture("articles.json")
+    ]
     client.get_all_articles.return_value = (
         [Article.from_json(item) for item in load_json_fixture("articles.json")],
         False,
