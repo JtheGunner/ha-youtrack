@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Editors and tooling
+.idea/
+.vscode/
+.worktrees/
+
+# Local planning documents
+/docs/plans/
+/docs/superpowers/
