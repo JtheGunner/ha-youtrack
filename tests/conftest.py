@@ -1,6 +1,6 @@
 """Shared fixtures for the YouTrack integration tests."""
 
-from collections.abc import Callable, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -55,6 +55,13 @@ async def fake_count(query: str) -> int | None:
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Allow Home Assistant to load the integration from custom_components."""
+
+
+@pytest.fixture(autouse=True)
+async def settle_tasks(hass: HomeAssistant) -> AsyncGenerator[None]:
+    """Let reloads started by a test finish before Home Assistant is torn down."""
+    yield
+    await hass.async_block_till_done()
 
 
 @pytest.fixture

@@ -10,9 +10,8 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.helpers import entity_registry as er
 
-from .entity import YouTrackProjectEntity
+from .entity import YouTrackProjectEntity, remove_stale_entities
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -76,23 +75,16 @@ async def async_setup_entry(
             [YouTrackQuerySensor(coordinator, query) for query in coordinator.custom_queries],
             config_subentry_id=subentry_id,
         )
-        _remove_stale_query_sensors(hass, entry, coordinator)
-
-
-def _remove_stale_query_sensors(
-    hass: HomeAssistant, entry: YouTrackConfigEntry, coordinator: YouTrackProjectCoordinator
-) -> None:
-    """Drop the sensors of queries that were deleted."""
-    registry = er.async_get(hass)
-    wanted = {
-        f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}{query.id}"
-        for query in coordinator.custom_queries
-    }
-    prefix = f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}"
-    for registered in er.async_entries_for_config_entry(registry, entry.entry_id):
-        unique_id = registered.unique_id
-        if unique_id.startswith(prefix) and unique_id not in wanted:
-            registry.async_remove(registered.entity_id)
+        remove_stale_entities(
+            hass,
+            entry,
+            "sensor",
+            f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}",
+            {
+                f"{coordinator.subentry_id}_{QUERY_KEY_PREFIX}{query.id}"
+                for query in coordinator.custom_queries
+            },
+        )
 
 
 class YouTrackCountSensor(YouTrackProjectEntity, SensorEntity):
