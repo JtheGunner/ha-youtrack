@@ -44,13 +44,13 @@ async def test_setup_and_unload(
 
 
 @pytest.mark.parametrize("exception", [YouTrackAuthError("x"), YouTrackPermissionError("x")])
-async def test_setup_fails_for_rejected_token(
+async def test_setup_starts_reauth_for_rejected_token(
     hass: HomeAssistant,
     mock_client: MagicMock,
     mock_config_entry: MockConfigEntry,
     exception: Exception,
 ) -> None:
-    """A rejected token fails the setup so that reauthentication can start."""
+    """A rejected token puts the entry into the reauth state."""
     mock_client.get_current_user.side_effect = exception
     mock_config_entry.add_to_hass(hass)
 
@@ -58,6 +58,7 @@ async def test_setup_fails_for_rejected_token(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+    assert any(mock_config_entry.async_get_active_flows(hass, {"reauth"}))
 
 
 async def test_setup_retries_when_server_unreachable(

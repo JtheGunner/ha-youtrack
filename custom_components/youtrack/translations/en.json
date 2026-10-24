@@ -14,6 +14,22 @@
           "api_token": "The token needs access to the projects you want to add.",
           "verify_ssl": "Disable only for self-signed certificates."
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate YouTrack",
+        "description": "YouTrack rejected the stored token for {url}. Enter a new permanent token.",
+        "data": {
+          "api_token": "Permanent token"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure YouTrack",
+        "description": "Change the connection settings. Leave the token empty to keep the current one.",
+        "data": {
+          "url": "URL",
+          "api_token": "Permanent token",
+          "verify_ssl": "Verify SSL certificate"
+        }
       }
     },
     "error": {
@@ -25,7 +41,9 @@
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This YouTrack instance is already configured."
+      "already_configured": "This YouTrack instance is already configured.",
+      "reauth_successful": "Reauthentication was successful.",
+      "reconfigure_successful": "The connection was updated."
     }
   },
   "config_subentries": {

@@ -14,6 +14,22 @@
           "api_token": "Das Token braucht Zugriff auf die Projekte, die du hinzufügen möchtest.",
           "verify_ssl": "Nur bei selbstsignierten Zertifikaten deaktivieren."
         }
+      },
+      "reauth_confirm": {
+        "title": "YouTrack erneut authentifizieren",
+        "description": "YouTrack hat das gespeicherte Token für {url} abgelehnt. Gib ein neues permanentes Token ein.",
+        "data": {
+          "api_token": "Permanentes Token"
+        }
+      },
+      "reconfigure": {
+        "title": "YouTrack neu konfigurieren",
+        "description": "Ändere die Verbindungseinstellungen. Lass das Token leer, um das aktuelle zu behalten.",
+        "data": {
+          "url": "URL",
+          "api_token": "Permanentes Token",
+          "verify_ssl": "SSL-Zertifikat prüfen"
+        }
       }
     },
     "error": {
@@ -25,7 +41,9 @@
       "unknown": "Unerwarteter Fehler."
     },
     "abort": {
-      "already_configured": "Diese YouTrack-Instanz ist bereits eingerichtet."
+      "already_configured": "Diese YouTrack-Instanz ist bereits eingerichtet.",
+      "reauth_successful": "Die erneute Authentifizierung war erfolgreich.",
+      "reconfigure_successful": "Die Verbindung wurde aktualisiert."
     }
   },
   "config_subentries": {
