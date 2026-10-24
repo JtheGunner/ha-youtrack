@@ -73,6 +73,7 @@ asks you for a new one.
 | Setup | Address, token, verify certificate | How to reach YouTrack. The token needs the permissions described above. |
 | Project | Project | The YouTrack project that becomes a device. |
 | Project → Reconfigure | Query sensors | Add, edit or remove custom searches (name, query, number of listed issues). |
+| Project → Reconfigure | Watch specific issues | An opt-in search whose unresolved matches each get a sensor (at most 25). |
 | Configure | Polling interval | How often YouTrack is asked, 1 to 60 minutes (default 5). |
 | Configure | State for checked / unchecked items | The state set when a to-do item is checked or unchecked (defaults `Done` / `Open`). |
 | Configure | Create issues from new to-do items | Off by default. |
@@ -170,6 +171,14 @@ automation:
 
 History is never replayed: only activity after Home Assistant has started reading the feed is reported, so
 changes made while Home Assistant was down are missed. Events arrive with the polling interval.
+
+### 👁️ Watched issues
+
+Off by default, because one entity per issue does not scale. Under **Manage query sensors → Watch specific
+issues** enter a search such as `tag: watch-me` or `issue id: DEMO-1, DEMO-2`. Every unresolved issue it matches
+(at most 25) gets a sensor whose state is the issue's *State* and whose attributes hold `summary`, `assignee`,
+`priority`, `type` and `url`. When an issue is resolved or no longer matches, its sensor is removed. Leave the
+search empty to turn it off.
 
 ### 🔎 Query sensors
 

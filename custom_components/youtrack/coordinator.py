@@ -17,10 +17,13 @@ from .const import (
     CONF_PROJECT_KEY,
     CONF_QUERIES,
     CONF_SCAN_INTERVAL,
+    CONF_WATCH,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     DUE_DATE_FIELD_NAMES,
     EVENT_PREFIX,
+    MAX_WATCHED,
+    WATCH_QUERY_ID,
 )
 from .exceptions import (
     YouTrackAuthError,
@@ -30,7 +33,7 @@ from .exceptions import (
     YouTrackRateLimitError,
 )
 from .issue_cache import IssueCache
-from .queries import COUNT_QUERIES, CountQuery, CustomQuery
+from .queries import COUNT_QUERIES, CountQuery, CustomQuery, watched_text
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -101,6 +104,17 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self.custom_queries: tuple[CustomQuery, ...] = tuple(
             CustomQuery.from_data(item) for item in subentry.data.get(CONF_QUERIES, ())
         )
+        watch = str(subentry.data.get(CONF_WATCH, "")).strip()
+        self.watch_query: CustomQuery | None = (
+            CustomQuery(
+                id=WATCH_QUERY_ID,
+                name="Watched issues",
+                text=watched_text(watch),
+                top=MAX_WATCHED,
+            )
+            if watch
+            else None
+        )
         super().__init__(
             hass,
             _LOGGER,
@@ -110,6 +124,20 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
                 minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
             ),
         )
+
+    @property
+    def _queries_to_run(self) -> tuple[CustomQuery, ...]:
+        if self.watch_query is None:
+            return self.custom_queries
+        return (*self.custom_queries, self.watch_query)
+
+    @property
+    def watched_issues(self) -> dict[str, Issue] | None:
+        """Return the watched issues by id, or None while there are no results to go by."""
+        if self.watch_query is None or not self.data:
+            return None
+        result = self.data.queries.get(WATCH_QUERY_ID)
+        return {issue.id: issue for issue in result.issues} if result else None
 
     @property
     def due_field(self) -> str | None:
@@ -192,7 +220,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             queries = self._supported_queries()
             values, results, *_ = await asyncio.gather(
                 asyncio.gather(*(self._count(query) for query in queries)),
-                asyncio.gather(*(self._run_custom(query) for query in self.custom_queries)),
+                asyncio.gather(*(self._run_custom(query) for query in self._queries_to_run)),
                 self._cache.refresh(dt_util.utcnow()),
                 self._feed.poll(dt_util.utcnow()),
             )
@@ -207,7 +235,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         previous_queries = self.data.queries if self.data else {}
         custom = {
             query.id: result if result is not None else previous_queries.get(query.id)
-            for query, result in zip(self.custom_queries, results, strict=True)
+            for query, result in zip(self._queries_to_run, results, strict=True)
         }
         new_events = self._take_events()
         return ProjectData(

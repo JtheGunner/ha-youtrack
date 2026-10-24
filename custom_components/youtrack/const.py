@@ -39,3 +39,8 @@ KB_RECENT_ARTICLES = 5
 
 # Names (lower case) under which projects usually keep the date issues are due.
 DUE_DATE_FIELD_NAMES = frozenset({"due date", "due"})
+
+# Opt-in watched issues: a search whose unresolved matches each get a sensor (at most MAX_WATCHED).
+CONF_WATCH = "watch"
+WATCH_QUERY_ID = "_watch"
+MAX_WATCHED = 25
