@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.youtrack.const import (
     CONF_API_TOKEN,
+    CONF_LLM_CREATE,
     CONF_REOPENED_STATE,
     CONF_RESOLVED_STATE,
     CONF_SCAN_INTERVAL,
@@ -268,6 +269,7 @@ async def test_options_flow_sets_scan_interval(
         CONF_RESOLVED_STATE: "Done",
         CONF_REOPENED_STATE: "Open",
         CONF_TODO_CREATE: False,
+        CONF_LLM_CREATE: False,
     }
 
 
@@ -285,12 +287,14 @@ async def test_options_flow_sets_todo_behaviour(
             CONF_RESOLVED_STATE: " Verified ",
             CONF_REOPENED_STATE: "Submitted",
             CONF_TODO_CREATE: True,
+            CONF_LLM_CREATE: True,
         },
     )
 
     assert mock_config_entry.options[CONF_RESOLVED_STATE] == "Verified"
     assert mock_config_entry.options[CONF_REOPENED_STATE] == "Submitted"
     assert mock_config_entry.options[CONF_TODO_CREATE] is True
+    assert mock_config_entry.options[CONF_LLM_CREATE] is True
 
 
 async def test_options_flow_shows_current_interval(

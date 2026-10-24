@@ -180,6 +180,21 @@ issues** enter a search such as `tag: watch-me` or `issue id: DEMO-1, DEMO-2`. E
 `priority`, `type` and `url`. When an issue is resolved or no longer matches, its sensor is removed. Leave the
 search empty to turn it off.
 
+### 🗣️ Assist and voice assistants
+
+Every YouTrack instance registers an **LLM API** called *YouTrack (…)*. Select it next to *Assist* in the options
+of a conversation agent and the assistant can:
+
+| Tool | What it does |
+|---|---|
+| `search_youtrack_issues` | Searches issues with the YouTrack search syntax (at most 10 results). |
+| `search_youtrack_articles` | Searches the knowledge base. |
+| `get_youtrack_article` | Reads an article, cut to a maximum length. |
+| `create_youtrack_issue` | Creates an issue. **Only available after you turn on *Let voice assistants create issues* in Configure.** |
+
+The assistant only sees projects you added to Home Assistant, and only what the token may read. Search results
+travel to your conversation agent, so mind where it runs if your issues are confidential.
+
 ### 🔎 Query sensors
 
 Open the project in **Settings → Devices & services → YouTrack**, choose **⋮ → Manage query sensors**

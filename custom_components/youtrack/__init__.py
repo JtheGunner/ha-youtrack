@@ -9,6 +9,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from . import llm_api
 from .activity import ActivityFeed
 from .api import YouTrackClient
 from .const import CONF_API_TOKEN, CONF_PROJECT_ID, CONF_URL, CONF_VERIFY_SSL, DOMAIN
@@ -72,6 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
         await knowledge_base.async_refresh()
         entry.runtime_data.knowledge_bases[subentry.subentry_id] = knowledge_base
 
+    llm_api.async_register(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

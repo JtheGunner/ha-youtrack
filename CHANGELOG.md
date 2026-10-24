@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- An LLM API for Assist conversation agents: search issues, search and read knowledge base articles, and,
+  only when allowed in the options, create issues.
 - Opt-in watched issues: a search (a tag or issue ids) whose unresolved matches each get a sensor, at most 25.
   Sensors of resolved or no longer matching issues are removed.
 - A calendar per project with the due dates of unresolved issues, for projects that have a `Due Date` field.

@@ -35,6 +35,7 @@ from homeassistant.helpers.selector import (
 from .api import YouTrackClient, normalize_base_url
 from .const import (
     CONF_API_TOKEN,
+    CONF_LLM_CREATE,
     CONF_PROJECT_ID,
     CONF_PROJECT_KEY,
     CONF_QUERIES,
@@ -471,6 +472,7 @@ class YouTrackOptionsFlow(OptionsFlow):
                     CONF_RESOLVED_STATE: user_input[CONF_RESOLVED_STATE].strip(),
                     CONF_REOPENED_STATE: user_input[CONF_REOPENED_STATE].strip(),
                     CONF_TODO_CREATE: user_input[CONF_TODO_CREATE],
+                    CONF_LLM_CREATE: user_input[CONF_LLM_CREATE],
                 }
             )
         options = self.config_entry.options
@@ -500,6 +502,9 @@ class YouTrackOptionsFlow(OptionsFlow):
                     ): TextSelector(),
                     probatio.Required(
                         CONF_TODO_CREATE, default=options.get(CONF_TODO_CREATE, False)
+                    ): BooleanSelector(),
+                    probatio.Required(
+                        CONF_LLM_CREATE, default=options.get(CONF_LLM_CREATE, False)
                     ): BooleanSelector(),
                 }
             ),
