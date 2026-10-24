@@ -100,6 +100,8 @@ asks you for a new one.
 
 ## 🧩 Entities
 
+<p align="center"><img src="docs/images/device.png" alt="A project device with its controls, sensors and events in Home Assistant" width="320"></p>
+
 Each project is a device with these entities. Entities that need a custom field the project does not have
 are not created.
 
