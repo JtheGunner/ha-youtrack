@@ -49,7 +49,8 @@ Requires Home Assistant **2026.10** or newer.
 
 The token acts with the permissions of your account. It needs to read the projects and issues you want to
 see in Home Assistant (*Read Project Basic* and *Read Issue* in those projects). Use a dedicated user if
-you want to limit what Home Assistant can see.
+you want to limit what Home Assistant can see. The actions and to-do changes additionally need permission
+to create issues, comment, update issues and add work items.
 
 ---
 
@@ -61,7 +62,24 @@ you want to limit what Home Assistant can see.
 3. Open the new entry and choose **Add project** for every project you want in Home Assistant.
 
 You can change the address or token later with **Reconfigure**. If YouTrack rejects the token, Home Assistant
-asks you for a new one. **Configure** sets how often YouTrack is polled (default 5 minutes).
+asks you for a new one.
+
+### Configuration
+
+| Where | Setting | Meaning |
+|---|---|---|
+| Setup | Address, token, verify certificate | How to reach YouTrack. The token needs the permissions described above. |
+| Project | Project | The YouTrack project that becomes a device. |
+| Project → Reconfigure | Query sensors | Add, edit or remove custom searches (name, query, number of listed issues). |
+| Configure | Polling interval | How often YouTrack is asked, 1 to 60 minutes (default 5). |
+| Configure | State for checked / unchecked items | The state set when a to-do item is checked or unchecked (defaults `Done` / `Open`). |
+| Configure | Create issues from new to-do items | Off by default. |
+
+### Removing the integration
+
+1. Remove a single project with **Delete** on its entry under *Devices & services → YouTrack*.
+2. Remove everything with **Delete** on the YouTrack entry. Its devices and entities go with it.
+3. Revoke the permanent token in YouTrack under *Profile → Account Security* if you no longer need it.
 
 ---
 
