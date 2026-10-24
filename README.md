@@ -172,12 +172,37 @@ assignee and link. The query is limited to the project automatically.
 | | Example | What it does |
 |---|---|---|
 | 🖥️ | [`docs/examples/dashboard.yaml`](docs/examples/dashboard.yaml) | A project overview: tiles, a gauge, the to-do list, history and activity. Replace `demo_project` with your project's entity prefix. |
+| 📚 | [`knowledge-base-script.yaml`](docs/examples/knowledge-base-script.yaml) | A script that searches the knowledge base for a topic and sends the first matching article as a notification. |
 | 🔔 | [`notify-critical-issues`](blueprints/automation/youtrack/notify-critical-issues.yaml) | Runs any action when the number of critical open issues goes up. |
 | 🛠️ | [`issue-for-unavailable-entity`](blueprints/automation/youtrack/issue-for-unavailable-entity.yaml) | Creates a YouTrack issue when an entity has been unavailable for a set time. |
 
 Import a blueprint in Home Assistant under **Settings → Automations & scenes → Blueprints → Import
 blueprint** with the raw GitHub address of its file, or copy the file to
 `config/blueprints/automation/youtrack/`.
+
+---
+
+## 📚 Using the knowledge base
+
+The integration does not copy articles into Home Assistant. It counts them per project (see
+[Entities](#-entities)) and reads them on demand through two actions that return their result as a response:
+
+```yaml
+- action: youtrack.search_articles
+  data:
+    query: heating manual   # YouTrack article search syntax
+    limit: 3
+  response_variable: found  # found.articles[*].id, .title, .url, ...
+- action: youtrack.get_article
+  data:
+    article_id: "{{ found.articles[0].id }}"
+    max_length: 2000        # longer content is cut and `truncated` is true
+  response_variable: article  # article.content is Markdown
+```
+
+Searching with `device_id` limits the search to one project. The complete example in
+[`docs/examples/knowledge-base-script.yaml`](docs/examples/knowledge-base-script.yaml) turns this into a script
+you can call from automations or voice assistants.
 
 ---
 

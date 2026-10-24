@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -21,6 +21,7 @@ from pytest_homeassistant_custom_component.common import (
 ROOT = Path(__file__).parent.parent
 BLUEPRINTS = ROOT / "blueprints" / "automation" / "youtrack"
 DASHBOARD = ROOT / "docs" / "examples" / "dashboard.yaml"
+KNOWLEDGE_BASE_SCRIPT = ROOT / "docs" / "examples" / "knowledge-base-script.yaml"
 CRITICAL = "sensor.demo_project_critical_open_issues"
 
 
@@ -141,3 +142,56 @@ def _walk(node: dict[str, Any]) -> Iterator[dict[str, Any]]:
     yield node
     for child in node.get("cards", []):
         yield from _walk(child)
+
+
+async def _run_knowledge_base_script(
+    hass: HomeAssistant, articles: list[dict[str, Any]], content: str, truncated: bool
+) -> list[ServiceCall]:
+    """Run the example script against canned article actions and return the notifications."""
+    searches: list[ServiceCall] = []
+
+    async def search(call: ServiceCall) -> dict[str, Any]:
+        searches.append(call)
+        return {"articles": articles}
+
+    async def get_article(call: ServiceCall) -> dict[str, Any]:
+        return {
+            "id": call.data["article_id"],
+            "title": "Heating manual",
+            "url": "https://yt.example.com/articles/DEMO-A-2",
+            "content": content,
+            "truncated": truncated,
+        }
+
+    for name, handler in (("search_articles", search), ("get_article", get_article)):
+        hass.services.async_register(
+            "youtrack", name, handler, supports_response=SupportsResponse.ONLY
+        )
+    notifications: list[ServiceCall] = async_mock_service(hass, "notify", "notify")
+    assert await async_setup_component(
+        hass, "script", {"script": yaml.safe_load(KNOWLEDGE_BASE_SCRIPT.read_text())}
+    )
+    await hass.services.async_call(
+        "script", "youtrack_knowledge_base_lookup", {"topic": "heating"}, blocking=True
+    )
+    assert [call.data["query"] for call in searches] == ["heating"]
+    return notifications
+
+
+async def test_knowledge_base_script_sends_the_article(hass: HomeAssistant) -> None:
+    """The first match is read and sent with its link; cut-off content is marked."""
+    (notification,) = await _run_knowledge_base_script(
+        hass, [{"id": "DEMO-A-2"}], "Turn the dial.", truncated=True
+    )
+
+    assert notification.data["title"] == "Heating manual"
+    assert notification.data["message"] == (
+        "Turn the dial. …\nhttps://yt.example.com/articles/DEMO-A-2"
+    )
+
+
+async def test_knowledge_base_script_reports_no_match(hass: HomeAssistant) -> None:
+    """Without a match the script says so and stops."""
+    (notification,) = await _run_knowledge_base_script(hass, [], "", truncated=False)
+
+    assert notification.data["message"] == "No article found for heating."
