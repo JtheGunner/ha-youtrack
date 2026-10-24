@@ -16,7 +16,11 @@ from custom_components.youtrack.const import (
     DOMAIN,
     SUBENTRY_PROJECT,
 )
-from custom_components.youtrack.exceptions import YouTrackConnectionError
+from custom_components.youtrack.exceptions import (
+    YouTrackAuthError,
+    YouTrackConnectionError,
+    YouTrackInvalidQueryError,
+)
 from custom_components.youtrack.models import Article, Issue
 
 from .common import load_json_fixture
@@ -246,6 +250,60 @@ async def test_api_errors_are_readable(
 
     with pytest.raises(HomeAssistantError):
         await _call(api, "search_youtrack_issues", query="x")
+
+
+async def test_a_missing_project_does_not_break_the_search(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A project YouTrack rejects (deleted there) is skipped; the others still answer."""
+    api = await _api(hass, _two_projects(mock_project_entry))
+    working = list(await mock_client.get_issues("x"))
+    working_articles = list(await mock_client.get_articles(query="x"))
+
+    async def issues(text: str, **_: Any) -> list[Issue]:
+        if "{OPS}" in text:
+            raise YouTrackInvalidQueryError("project is gone")
+        return working
+
+    async def articles(*, query: str, **_: Any) -> list[Article]:
+        if "{OPS}" in query:
+            raise YouTrackInvalidQueryError("project is gone")
+        return working_articles
+
+    mock_client.get_issues.side_effect = issues
+    mock_client.get_articles.side_effect = articles
+
+    assert (await _call(api, "search_youtrack_issues", query="pump"))["issues"]
+    assert (await _call(api, "search_youtrack_articles", query="heating"))["articles"]
+
+
+async def test_search_fails_when_every_project_fails(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """With no project left to answer, the rejection is reported."""
+    api = await _api(hass, _two_projects(mock_project_entry))
+    mock_client.get_issues.side_effect = YouTrackInvalidQueryError("project is gone")
+
+    with pytest.raises(HomeAssistantError):
+        await _call(api, "search_youtrack_issues", query="pump")
+
+
+async def test_other_failures_are_not_hidden_by_working_projects(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A rejected token must still surface even if another project answered."""
+    api = await _api(hass, _two_projects(mock_project_entry))
+    working = list(await mock_client.get_issues("x"))
+
+    async def issues(text: str, **_: Any) -> list[Issue]:
+        if "{OPS}" in text:
+            raise YouTrackAuthError("revoked")
+        return working
+
+    mock_client.get_issues.side_effect = issues
+
+    with pytest.raises(HomeAssistantError):
+        await _call(api, "search_youtrack_issues", query="pump")
 
 
 async def test_api_is_removed_with_the_entry(
