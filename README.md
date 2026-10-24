@@ -25,7 +25,8 @@
 | ✅ | Open issues as a Home Assistant to-do list | ✅ available |
 | 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | ✅ available |
-| 📚 | Knowledge base: search and read articles | 🛠 planned |
+| 📚 | Knowledge base: article count and latest change per project | ✅ available |
+| 🔍 | Knowledge base: search and read articles from automations | 🛠 planned |
 
 Each YouTrack instance is set up once; every project you add becomes its own device.
 
@@ -80,6 +81,11 @@ are not created.
 | ✔️ | Resolved in the last 7 days | | |
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
+| 📚 | Articles | Knowledge base articles of the project (`capped` attribute is `true` above 2000) | read access to articles |
+| 🕑 | Last updated article | When an article last changed. Attributes: `id`, `title`, `author`, `url`, `recent` (latest five) | as above |
+
+Knowledge base entities refresh at a sixth of the issue polling rate and stay unavailable, without affecting
+the issue entities, when the token may not read articles.
 
 ### ✍️ Actions
 

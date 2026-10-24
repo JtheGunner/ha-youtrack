@@ -33,3 +33,6 @@ CONF_REOPENED_STATE = "reopened_state"
 CONF_TODO_CREATE = "todo_create"
 DEFAULT_RESOLVED_STATE = "Done"
 DEFAULT_REOPENED_STATE = "Open"
+
+KB_INTERVAL_FACTOR = 6  # the knowledge base is polled this many times slower than issues
+KB_RECENT_ARTICLES = 5

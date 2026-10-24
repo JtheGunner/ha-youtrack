@@ -6,19 +6,23 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
 
-from .entity import YouTrackProjectEntity, remove_stale_entities
+from .entity import YouTrackKnowledgeBaseEntity, YouTrackProjectEntity, remove_stale_entities
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
     from .coordinator import YouTrackProjectCoordinator
     from .data import YouTrackConfigEntry
+    from .kb_coordinator import KnowledgeBaseCoordinator
     from .queries import CustomQuery
 
 PARALLEL_UPDATES = 0
@@ -73,6 +77,11 @@ async def async_setup_entry(
         )
         async_add_entities(
             [YouTrackQuerySensor(coordinator, query) for query in coordinator.custom_queries],
+            config_subentry_id=subentry_id,
+        )
+        knowledge_base = entry.runtime_data.knowledge_bases[subentry_id]
+        async_add_entities(
+            [YouTrackArticleCountSensor(knowledge_base), YouTrackLastArticleSensor(knowledge_base)],
             config_subentry_id=subentry_id,
         )
         remove_stale_entities(
@@ -144,3 +153,57 @@ class YouTrackQuerySensor(YouTrackProjectEntity, SensorEntity):
                 for issue in (result.issues if result else ())
             ],
         }
+
+
+class YouTrackArticleCountSensor(YouTrackKnowledgeBaseEntity, SensorEntity):
+    """The number of knowledge base articles of a project."""
+
+    _attr_translation_key = "articles"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: KnowledgeBaseCoordinator) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, "articles")
+
+    @property
+    def native_value(self) -> int:
+        """Return the number of articles."""
+        return self.coordinator.data.count
+
+    @property
+    def extra_state_attributes(self) -> dict[str, bool]:
+        """Say whether the count was cut short by the reading limit."""
+        return {"capped": self.coordinator.data.capped}
+
+
+class YouTrackLastArticleSensor(YouTrackKnowledgeBaseEntity, SensorEntity):
+    """When the knowledge base of a project last changed, and what changed."""
+
+    _attr_translation_key = "last_updated_article"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, coordinator: KnowledgeBaseCoordinator) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, "last_updated_article")
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return when the most recently changed article was changed."""
+        recent = self.coordinator.data.recent
+        return recent[0].updated if recent else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the latest article and the few before it."""
+        base_url = self.coordinator.config_entry.data["url"]
+        recent = [
+            {
+                "id": article.readable_id,
+                "title": article.summary,
+                "author": article.author,
+                "updated": article.updated.isoformat() if article.updated else None,
+                "url": f"{base_url}/articles/{article.readable_id}",
+            }
+            for article in self.coordinator.data.recent
+        ]
+        return {**(recent[0] if recent else {}), "recent": recent}

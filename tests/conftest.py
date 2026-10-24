@@ -20,6 +20,7 @@ from custom_components.youtrack.const import (
 )
 from custom_components.youtrack.models import (
     ActivityPage,
+    Article,
     Issue,
     Project,
     ProjectField,
@@ -73,6 +74,10 @@ def mock_client() -> Generator[MagicMock]:
     client.get_current_user.return_value = User(login="example.user", name="Example User")
     client.count_issues.side_effect = fake_count
     client.get_activities.return_value = ActivityPage([], 0)
+    client.get_all_articles.return_value = (
+        [Article.from_json(item) for item in load_json_fixture("articles.json")],
+        False,
+    )
     client.get_issues.return_value = [
         Issue.from_json(item) for item in load_json_fixture("issues.json")
     ]

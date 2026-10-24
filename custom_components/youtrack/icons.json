@@ -24,6 +24,12 @@
       },
       "issues_critical_open": {
         "default": "mdi:alert-octagon"
+      },
+      "articles": {
+        "default": "mdi:book-open-page-variant"
+      },
+      "last_updated_article": {
+        "default": "mdi:book-clock"
       }
     },
     "binary_sensor": {

@@ -8,7 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- Knowledge base API client calls (list, search, get, count); not yet used by entities.
+- Knowledge base API client calls (list, search, get).
+- Knowledge base sensors per project: article count and the last updated article with the latest five as attributes.
 
 ## [0.2.0] - 2026-10-24
 
