@@ -1,15 +1,12 @@
 """Tests for the YouTrack API client."""
 
-from collections.abc import Callable
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
 import pytest
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.youtrack.api import YouTrackClient, normalize_base_url
+from custom_components.youtrack.api import normalize_base_url
 from custom_components.youtrack.exceptions import (
     YouTrackAuthError,
     YouTrackConnectionError,
@@ -22,29 +19,11 @@ from custom_components.youtrack.exceptions import (
 from custom_components.youtrack.models import Issue
 
 from .common import load_json_fixture, load_text_fixture
+from .conftest import TOKEN, URL, ClientFactory
 
-BASE = "https://yt.example.com"
-TOKEN = "perm:super-secret-token"
+BASE = URL
 JSON = {"Content-Type": "application/json"}
 HTML = {"Content-Type": "text/html"}
-
-type ClientFactory = Callable[..., YouTrackClient]
-
-
-@pytest.fixture
-def make_client(hass: HomeAssistant) -> ClientFactory:
-    """Return a factory for clients bound to the mocked session."""
-
-    def factory(base_url: str = BASE, **kwargs: object) -> YouTrackClient:
-        kwargs.setdefault("count_retry_delay", 0)
-        return YouTrackClient(
-            async_get_clientsession(hass),
-            base_url,
-            TOKEN,
-            **kwargs,  # type: ignore[arg-type]
-        )
-
-    return factory
 
 
 @pytest.mark.parametrize(

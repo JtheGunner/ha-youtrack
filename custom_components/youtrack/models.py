@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from .exceptions import YouTrackResponseError
@@ -132,3 +134,93 @@ class Issue:
             type=_field_value_name(fields.get("Type")),
             assignee=_field_value_name(fields.get("Assignee")),
         )
+
+
+class ActivityKind(StrEnum):
+    """What happened to an issue."""
+
+    CREATED = "created"
+    UPDATED = "updated"
+    RESOLVED = "resolved"
+    REOPENED = "reopened"
+    COMMENTED = "commented"
+
+
+_CUSTOM_FIELD_MEMBER = re.compile(r"^__CUSTOM_FIELD__(?P<name>.+)_\d+$")
+
+
+def _value_names(values: Any) -> str | None:
+    """Join the names of the values of a custom field change."""
+    if not isinstance(values, list):
+        return None
+    names = [name for value in values if (name := _field_value_name(value))]
+    return ", ".join(names) or None
+
+
+@dataclass(frozen=True, slots=True)
+class Activity:
+    """One entry of the YouTrack activity feed, reduced to what events need."""
+
+    id: str
+    timestamp: datetime
+    kind: ActivityKind
+    issue_id: str
+    summary: str
+    project: str | None
+    author: str | None
+    field: str | None = None
+    old_value: str | None = None
+    new_value: str | None = None
+
+    @classmethod
+    def from_json(cls, payload: dict[str, Any]) -> Activity | None:
+        """Build an activity; return None for entries that are not issue events."""
+        kind = cls._kind(payload)
+        target = payload.get("target")
+        if kind is None or not isinstance(target, dict):
+            return None
+        issue = target.get("issue") if kind is ActivityKind.COMMENTED else target
+        timestamp = _timestamp(payload.get("timestamp"))
+        if not isinstance(issue, dict) or timestamp is None:
+            return None
+        project = issue.get("project")
+        author = payload.get("author")
+        field = None
+        if kind is ActivityKind.UPDATED:
+            member = _CUSTOM_FIELD_MEMBER.match(str(payload.get("targetMember")))
+            field = member["name"] if member else None
+        return cls(
+            id=_require_str(payload, "id"),
+            timestamp=timestamp,
+            kind=kind,
+            issue_id=_require_str(issue, "idReadable"),
+            summary=str(issue.get("summary") or ""),
+            project=project.get("shortName") if isinstance(project, dict) else None,
+            author=author.get("login") if isinstance(author, dict) else None,
+            field=field,
+            old_value=_value_names(payload.get("removed")) if field else None,
+            new_value=_value_names(payload.get("added")) if field else None,
+        )
+
+    @staticmethod
+    def _kind(payload: dict[str, Any]) -> ActivityKind | None:
+        match payload.get("$type"):
+            case "IssueCreatedActivityItem":
+                return ActivityKind.CREATED
+            case "IssueResolvedActivityItem":
+                if payload.get("added"):
+                    return ActivityKind.RESOLVED
+                return ActivityKind.REOPENED if payload.get("removed") else None
+            case "CommentActivityItem":
+                return ActivityKind.COMMENTED if payload.get("added") else None
+            case "CustomFieldActivityItem":
+                return ActivityKind.UPDATED
+        return None
+
+
+@dataclass(frozen=True, slots=True)
+class ActivityPage:
+    """A page of the activity feed; ``size`` counts entries before unusable ones were dropped."""
+
+    items: list[Activity]
+    size: int

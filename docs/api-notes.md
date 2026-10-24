@@ -71,10 +71,8 @@ as the stable subentry unique ID; `shortName` can be renamed.
 
 - Item `id` is unique and monotonic per feed; `timestamp` is epoch ms. Use `timestamp` as the cursor and
   deduplicate by `id`.
-- Comment items need an extra lookup (or the `target(issue(idReadable))` projection — **unverified**) to learn
-  the issue ID.
-- Activities are not project-filterable in the request I tested; filter by `target.project.shortName` or by
-  querying issues. Using `project:` in the activity request is **unverified**.
+- Comment items: `target(issue(idReadable,summary,project(shortName)))` returns the issue (verified, HAY-21).
+- The feed is instance-wide; filter by project on the client (`target.project.shortName`, or `target.issue.project` for comments).
 
 ## Knowledge base articles
 
@@ -122,3 +120,17 @@ Verified live (HAY-20):
   in each candidate zone (UTC, then the Home Assistant zone).
 - Relative minute and hour units are unusable: `{minus 1m}` and `{minus 1h}` matched every issue.
 - Deleted and moved issues do not show up in a delta; a periodic full reload removes them.
+
+## Activity feed details (HAY-21)
+
+Verified live:
+
+- `start=<epoch ms>` returns items at or after the timestamp, oldest first; `reverse=true` flips the order.
+  `$top`/`$skip` page as usual.
+- The projection `added(name,login),removed(name,login)` works on custom field items. On
+  `IssueResolvedActivityItem`, `added` is the resolve timestamp and `removed` the previous one: a reopening
+  has `added: null` and a number in `removed`.
+- A comment item with a non-empty `removed` and empty `added` is a deleted comment.
+- Creating or resolving an issue also writes custom field items within milliseconds (initial values, `State`
+  change); the integration drops field changes within 5 s of a creation, resolution or reopening.
+- The `targetMember` of field changes looks like `__CUSTOM_FIELD__State_2`.

@@ -8,6 +8,7 @@ from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .activity import ActivityFeed
 from .api import YouTrackClient
 from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL
 from .coordinator import YouTrackProjectCoordinator
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 
     from .data import YouTrackConfigEntry
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.EVENT, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> bool:
@@ -38,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
     except YouTrackError as err:
         raise ConfigEntryNotReady(f"Cannot reach YouTrack: {err}") from err
 
-    entry.runtime_data = YouTrackRuntimeData(client=client)
+    entry.runtime_data = YouTrackRuntimeData(client=client, feed=ActivityFeed(client))
     for subentry in entry.subentries.values():
         coordinator = YouTrackProjectCoordinator(hass, entry, subentry)
         await coordinator.async_config_entry_first_refresh()

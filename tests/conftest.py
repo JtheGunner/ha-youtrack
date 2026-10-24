@@ -1,9 +1,11 @@
 """Shared fixtures for the YouTrack integration tests."""
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.youtrack.api import YouTrackClient
@@ -16,7 +18,14 @@ from custom_components.youtrack.const import (
     DOMAIN,
     SUBENTRY_PROJECT,
 )
-from custom_components.youtrack.models import Issue, Project, ProjectField, ServerInfo, User
+from custom_components.youtrack.models import (
+    ActivityPage,
+    Issue,
+    Project,
+    ProjectField,
+    ServerInfo,
+    User,
+)
 
 from .common import load_json_fixture
 
@@ -56,6 +65,7 @@ def mock_client() -> Generator[MagicMock]:
     client.get_server_info.return_value = ServerInfo(version="2026.2", build="1")
     client.get_current_user.return_value = User(login="example.user", name="Example User")
     client.count_issues.side_effect = fake_count
+    client.get_activities.return_value = ActivityPage([], 0)
     client.get_issues.return_value = [
         Issue.from_json(item) for item in load_json_fixture("issues.json")
     ]
@@ -105,3 +115,22 @@ def mock_project_entry() -> MockConfigEntry:
             }
         ],
     )
+
+
+type ClientFactory = Callable[..., YouTrackClient]
+
+
+@pytest.fixture
+def make_client(hass: HomeAssistant) -> ClientFactory:
+    """Return a factory for clients bound to the mocked session."""
+
+    def factory(base_url: str = URL, **kwargs: object) -> YouTrackClient:
+        kwargs.setdefault("count_retry_delay", 0)
+        return YouTrackClient(
+            async_get_clientsession(hass),
+            base_url,
+            TOKEN,
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+    return factory
