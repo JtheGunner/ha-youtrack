@@ -124,9 +124,17 @@
     "step": {
       "init": {
         "title": "YouTrack options",
-        "description": "How often Home Assistant asks YouTrack for updates.",
+        "description": "Polling and what the to-do lists may change in YouTrack.",
         "data": {
-          "scan_interval": "Update interval (minutes)"
+          "scan_interval": "Update interval (minutes)",
+          "resolved_state": "State for checked items",
+          "reopened_state": "State for unchecked items",
+          "todo_create": "Create issues from new to-do items"
+        },
+        "data_description": {
+          "resolved_state": "Checking an item sets the issue to this state.",
+          "reopened_state": "Unchecking an item sets the issue to this state.",
+          "todo_create": "Adds items to the open issues list as new issues of that project."
         }
       }
     }
@@ -343,6 +351,12 @@
     },
     "created_without_fields": {
       "message": "Issue {issue_id} was created, but setting type, priority or assignee failed: {error}"
+    },
+    "todo_edit_unsupported": {
+      "message": "Changing the text of an issue is not supported here. Edit it in YouTrack."
+    },
+    "empty_summary": {
+      "message": "An issue needs a summary."
     }
   }
 }

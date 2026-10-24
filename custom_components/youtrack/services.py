@@ -96,38 +96,38 @@ LOG_WORK_SCHEMA = probatio.Schema(
 )
 
 
-def _error(key: str, **placeholders: str) -> ServiceValidationError:
+def service_error(key: str, **placeholders: str) -> ServiceValidationError:
     return ServiceValidationError(
         translation_domain=DOMAIN, translation_key=key, translation_placeholders=placeholders
     )
 
 
-def _command_value(name: str, value: str) -> str:
+def command_value(name: str, value: str) -> str:
     """Return ``value`` if it is safe inside a YouTrack command."""
     value = value.strip()
     if not _COMMAND_VALUE.match(value):
-        raise _error("invalid_command_value", field=name)
+        raise service_error("invalid_command_value", field=name)
     return value
 
 
 def _issue_id(value: str) -> str:
     issue_id = value.strip().upper()
     if not _ISSUE_ID.match(issue_id):
-        raise _error("invalid_issue_id", issue_id=value)
+        raise service_error("invalid_issue_id", issue_id=value)
     return issue_id
 
 
 def _project_coordinator(hass: HomeAssistant, device_ids: list[str]) -> YouTrackProjectCoordinator:
     """Return the coordinator of the project device that was selected."""
     if len(device_ids) != 1:
-        raise _error("select_one_project")
+        raise service_error("select_one_project")
     device = dr.async_get(hass).async_get(device_ids[0])
     if device is not None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             for coordinator in entry.runtime_data.coordinators.values():
                 if (DOMAIN, f"{entry.entry_id}_{coordinator.project_id}") in device.identifiers:
                     return coordinator  # type: ignore[no-any-return]
-    raise _error("unknown_project")
+    raise service_error("unknown_project")
 
 
 def _entry(hass: HomeAssistant, device_ids: list[str]) -> YouTrackConfigEntry:
@@ -137,10 +137,10 @@ def _entry(hass: HomeAssistant, device_ids: list[str]) -> YouTrackConfigEntry:
     entries: list[YouTrackConfigEntry] = hass.config_entries.async_loaded_entries(DOMAIN)
     if len(entries) == 1:
         return entries[0]
-    raise _error("select_instance" if entries else "not_loaded")
+    raise service_error("select_instance" if entries else "not_loaded")
 
 
-async def _call[T](
+async def call_api[T](
     hass: HomeAssistant, entry: YouTrackConfigEntry, operation: Callable[[], Awaitable[T]]
 ) -> T:
     """Run an API call and turn failures into errors Home Assistant can show."""
@@ -154,9 +154,9 @@ async def _call[T](
             translation_domain=DOMAIN, translation_key="permission_denied"
         ) from err
     except YouTrackNotFoundError as err:
-        raise _error("not_found") from err
+        raise service_error("not_found") from err
     except YouTrackBadRequestError as err:
-        raise _error("rejected", reason=str(err)) from err
+        raise service_error("rejected", reason=str(err)) from err
     except YouTrackError as err:
         raise HomeAssistantError(
             translation_domain=DOMAIN,
@@ -177,7 +177,7 @@ async def _create_issue(call: ServiceCall) -> ServiceResponse:
     entry = coordinator.config_entry
     client = entry.runtime_data.client
     commands = [
-        f"{field} {_command_value(field, data[key])}"
+        f"{field} {command_value(field, data[key])}"
         for key, field in (
             (ATTR_TYPE, "Type"),
             (ATTR_PRIORITY, "Priority"),
@@ -185,7 +185,7 @@ async def _create_issue(call: ServiceCall) -> ServiceResponse:
         )
         if key in data
     ]
-    issue_id = await _call(
+    issue_id = await call_api(
         hass,
         entry,
         lambda: client.create_issue(
@@ -194,7 +194,7 @@ async def _create_issue(call: ServiceCall) -> ServiceResponse:
     )
     if commands:
         try:
-            await _call(hass, entry, lambda: client.run_command(issue_id, " ".join(commands)))
+            await call_api(hass, entry, lambda: client.run_command(issue_id, " ".join(commands)))
         except HomeAssistantError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
@@ -209,7 +209,7 @@ async def _add_comment(call: ServiceCall) -> None:
     hass, data = call.hass, call.data
     entry = _entry(hass, data.get(ATTR_DEVICE_ID, []))
     issue_id, text = _issue_id(data[ATTR_ISSUE_ID]), data[ATTR_TEXT]
-    await _call(hass, entry, lambda: entry.runtime_data.client.add_comment(issue_id, text))
+    await call_api(hass, entry, lambda: entry.runtime_data.client.add_comment(issue_id, text))
     await _refresh(entry)
 
 
@@ -218,9 +218,9 @@ async def _transition(call: ServiceCall) -> None:
     entry = _entry(hass, data.get(ATTR_DEVICE_ID, []))
     issue_id = _issue_id(data[ATTR_ISSUE_ID])
     command = (
-        f"{_command_value('field', data[ATTR_FIELD])} {_command_value('state', data[ATTR_STATE])}"
+        f"{command_value('field', data[ATTR_FIELD])} {command_value('state', data[ATTR_STATE])}"
     )
-    await _call(hass, entry, lambda: entry.runtime_data.client.run_command(issue_id, command))
+    await call_api(hass, entry, lambda: entry.runtime_data.client.run_command(issue_id, command))
     await _refresh(entry)
 
 
@@ -228,8 +228,8 @@ async def _assign(call: ServiceCall) -> None:
     hass, data = call.hass, call.data
     entry = _entry(hass, data.get(ATTR_DEVICE_ID, []))
     issue_id = _issue_id(data[ATTR_ISSUE_ID])
-    command = f"Assignee {_command_value(ATTR_ASSIGNEE, data[ATTR_ASSIGNEE])}"
-    await _call(hass, entry, lambda: entry.runtime_data.client.run_command(issue_id, command))
+    command = f"Assignee {command_value(ATTR_ASSIGNEE, data[ATTR_ASSIGNEE])}"
+    await call_api(hass, entry, lambda: entry.runtime_data.client.run_command(issue_id, command))
     await _refresh(entry)
 
 
@@ -239,9 +239,9 @@ async def _log_work(call: ServiceCall) -> None:
     issue_id = _issue_id(data[ATTR_ISSUE_ID])
     duration = " ".join(data[ATTR_DURATION].lower().split())
     if not _DURATION.match(duration):
-        raise _error("invalid_duration", duration=data[ATTR_DURATION])
+        raise service_error("invalid_duration", duration=data[ATTR_DURATION])
     date: datetime | None = data.get(ATTR_DATE)
-    await _call(
+    await call_api(
         hass,
         entry,
         lambda: entry.runtime_data.client.log_work(

@@ -42,10 +42,15 @@ from .const import (
     CONF_QUERY_NAME,
     CONF_QUERY_TEXT,
     CONF_QUERY_TOP,
+    CONF_REOPENED_STATE,
+    CONF_RESOLVED_STATE,
     CONF_SCAN_INTERVAL,
+    CONF_TODO_CREATE,
     CONF_URL,
     CONF_VERIFY_SSL,
     DEFAULT_QUERY_TOP,
+    DEFAULT_REOPENED_STATE,
+    DEFAULT_RESOLVED_STATE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_QUERY_TOP,
@@ -427,17 +432,25 @@ class YouTrackOptionsFlow(OptionsFlow):
     """Options of a YouTrack instance."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Set how often YouTrack is polled."""
+        """Set the polling interval and what the to-do lists may change."""
         if user_input is not None:
             return self.async_create_entry(
-                data={CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])}
+                data={
+                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
+                    CONF_RESOLVED_STATE: user_input[CONF_RESOLVED_STATE].strip(),
+                    CONF_REOPENED_STATE: user_input[CONF_REOPENED_STATE].strip(),
+                    CONF_TODO_CREATE: user_input[CONF_TODO_CREATE],
+                }
             )
-        current = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        options = self.config_entry.options
         return self.async_show_form(
             step_id="init",
             data_schema=probatio.Schema(
                 {
-                    probatio.Required(CONF_SCAN_INTERVAL, default=current): NumberSelector(
+                    probatio.Required(
+                        CONF_SCAN_INTERVAL,
+                        default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                    ): NumberSelector(
                         NumberSelectorConfig(
                             min=MIN_SCAN_INTERVAL,
                             max=MAX_SCAN_INTERVAL,
@@ -445,7 +458,18 @@ class YouTrackOptionsFlow(OptionsFlow):
                             unit_of_measurement="min",
                             mode=NumberSelectorMode.BOX,
                         )
-                    )
+                    ),
+                    probatio.Required(
+                        CONF_RESOLVED_STATE,
+                        default=options.get(CONF_RESOLVED_STATE, DEFAULT_RESOLVED_STATE),
+                    ): TextSelector(),
+                    probatio.Required(
+                        CONF_REOPENED_STATE,
+                        default=options.get(CONF_REOPENED_STATE, DEFAULT_REOPENED_STATE),
+                    ): TextSelector(),
+                    probatio.Required(
+                        CONF_TODO_CREATE, default=options.get(CONF_TODO_CREATE, False)
+                    ): BooleanSelector(),
                 }
             ),
         )
