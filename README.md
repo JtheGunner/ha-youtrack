@@ -156,6 +156,8 @@ Each project has an **Open issues** to-do list that works with the native to-do 
 gets a list with its issues. Items read `ID summary`; the description shows state, priority, assignee and
 the link.
 
+<p align="center"><img src="docs/images/todo-list.png" alt="A query to-do list in Home Assistant" width="460"></p>
+
 - **Checking** an item sets the issue to the state *State for checked items* (default `Done`);
   **unchecking** sets *State for unchecked items* (default `Open`). Both are options of the integration
   and must exist in your workflow.
@@ -163,6 +165,13 @@ the link.
   the *Open issues* list become issues of that project.
 - Renaming an item is refused: edit the text in YouTrack.
 - If the token's user may not change the issue, the card shows YouTrack's refusal.
+
+### 📅 Calendar
+
+Every project with a due date field gets a calendar. Unresolved issues appear as all-day events on their
+due date; overdue ones are shown faded.
+
+<img src="docs/images/calendar.png" alt="The due date calendar of a project in Home Assistant">
 
 ### 🔔 Issue events
 
