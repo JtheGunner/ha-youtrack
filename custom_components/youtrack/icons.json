@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "sensor": {
+      "issues_total": { "default": "mdi:format-list-bulleted" },
+      "issues_open": { "default": "mdi:folder-open" },
+      "issues_resolved": { "default": "mdi:check-circle" },
+      "issues_unassigned": { "default": "mdi:account-question" },
+      "issues_overdue": { "default": "mdi:calendar-alert" },
+      "issues_created_7d": { "default": "mdi:plus-circle" },
+      "issues_resolved_7d": { "default": "mdi:calendar-check" },
+      "issues_critical_open": { "default": "mdi:alert-octagon" }
+    },
+    "binary_sensor": {
+      "has_overdue": { "default": "mdi:calendar-check", "state": { "on": "mdi:calendar-alert" } },
+      "has_critical_open": { "default": "mdi:shield-check", "state": { "on": "mdi:alert-octagon" } }
+    }
+  }
+}
