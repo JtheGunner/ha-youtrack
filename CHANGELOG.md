@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Issue activity events: an event entity per project and `youtrack_issue_*` bus events for created,
+  updated, resolved, reopened and commented issues. Existing history is not replayed.
 - Unresolved issues of each project are cached and refreshed with small `updated:` delta requests; a full
   reload every 12 polls drops deleted and moved issues.
 - Query sensors: add, edit and remove named YouTrack searches per project. Each one is a sensor with the

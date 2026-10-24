@@ -165,6 +165,22 @@
       "has_critical_open": {
         "name": "Has critical open issues"
       }
+    },
+    "event": {
+      "issue_activity": {
+        "name": "Issue activity",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "created": "Created",
+              "updated": "Updated",
+              "resolved": "Resolved",
+              "reopened": "Reopened",
+              "commented": "Commented"
+            }
+          }
+        }
+      }
     }
   }
 }

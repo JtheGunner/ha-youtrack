@@ -21,10 +21,11 @@ from .exceptions import (
     YouTrackRateLimitError,
     YouTrackResponseError,
 )
-from .models import Issue, Project, ProjectField, ServerInfo, User
+from .models import Activity, ActivityPage, Issue, Project, ProjectField, ServerInfo, User
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from datetime import datetime
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
 COUNT_ATTEMPTS = 3
@@ -36,6 +37,13 @@ ISSUE_FIELDS = (
     "customFields(name,value(name,login))"
 )
 PROJECT_FIELDS = "id,name,shortName,archived"
+ACTIVITY_CATEGORIES = (
+    "IssueCreatedCategory,IssueResolvedCategory,CommentsCategory,CustomFieldCategory"
+)
+ACTIVITY_FIELDS = (
+    "id,timestamp,author(login),added(name,login),removed(name,login),targetMember,"
+    "target(idReadable,summary,project(shortName),issue(idReadable,summary,project(shortName)))"
+)
 
 _NOT_JSON = object()
 
@@ -156,6 +164,29 @@ class YouTrackClient:
         if not isinstance(page, list):
             raise YouTrackResponseError("Expected a list of issues")
         return [Issue.from_json(item) for item in page]
+
+    async def get_activities(
+        self, start: datetime, *, top: int = PAGE_SIZE, skip: int = 0, newest_first: bool = False
+    ) -> ActivityPage:
+        """Return issue activities at or after ``start`` (oldest first unless ``newest_first``).
+
+        Entries that are not issue events (or are malformed) are dropped from ``items`` but still
+        count towards ``size``, which is what paging with ``skip`` needs.
+        """
+        params: dict[str, str | int] = {
+            "categories": ACTIVITY_CATEGORIES,
+            "fields": ACTIVITY_FIELDS,
+            "start": int(start.timestamp() * 1000),
+            "$top": top,
+            "$skip": skip,
+        }
+        if newest_first:
+            params["reverse"] = "true"
+        page = await self._get_json("/api/activities", params)
+        if not isinstance(page, list):
+            raise YouTrackResponseError("Expected a list of activities")
+        activities = (Activity.from_json(item) for item in page if isinstance(item, dict))
+        return ActivityPage([a for a in activities if a is not None], len(page))
 
     async def _get_json(self, path: str, params: Mapping[str, str | int] | None = None) -> Any:
         return await self._request("GET", path, params=params)

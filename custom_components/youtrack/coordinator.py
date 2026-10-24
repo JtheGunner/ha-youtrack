@@ -19,6 +19,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    EVENT_PREFIX,
 )
 from .exceptions import (
     YouTrackAuthError,
@@ -37,9 +38,25 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from .data import YouTrackConfigEntry
-    from .models import Issue
+    from .models import Activity, Issue
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def event_attributes(activity: Activity, base_url: str) -> dict[str, str | None]:
+    """Return what automations get to know about an issue event."""
+    attributes: dict[str, str | None] = {
+        "issue_id": activity.issue_id,
+        "summary": activity.summary,
+        "project": activity.project,
+        "author": activity.author,
+        "url": f"{base_url}/issue/{activity.issue_id}",
+    }
+    if activity.field:
+        attributes.update(
+            field=activity.field, old_value=activity.old_value, new_value=activity.new_value
+        )
+    return attributes
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +74,7 @@ class ProjectData:
     counts: Mapping[str, int | None]
     queries: Mapping[str, QueryResult]
     open_issues: Mapping[str, Issue]
+    new_events: tuple[Activity, ...] = ()
 
 
 class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
@@ -76,6 +94,8 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self._field_names: set[str] | None = None
         self._due_field: str | None = None
         self._invalid_queries: set[str] = set()
+        self._feed = entry.runtime_data.feed
+        self._event_sequence: int | None = None
         self._cache = IssueCache(self._client, self.project_key, dt_util.get_default_time_zone())
         self.custom_queries: tuple[CustomQuery, ...] = tuple(
             CustomQuery.from_data(item) for item in subentry.data.get(CONF_QUERIES, ())
@@ -164,10 +184,11 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             if self._field_names is None:
                 await self._load_fields()
             queries = self._supported_queries()
-            values, results, _ = await asyncio.gather(
+            values, results, *_ = await asyncio.gather(
                 asyncio.gather(*(self._count(query) for query in queries)),
                 asyncio.gather(*(self._run_custom(query) for query in self.custom_queries)),
                 self._cache.refresh(dt_util.utcnow()),
+                self._feed.poll(dt_util.utcnow()),
             )
         except (YouTrackAuthError, YouTrackPermissionError) as err:
             raise ConfigEntryAuthFailed("YouTrack rejected the stored token") from err
@@ -182,6 +203,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             query.id: result if result is not None else previous_queries.get(query.id)
             for query, result in zip(self.custom_queries, results, strict=True)
         }
+        new_events = self._take_events()
         return ProjectData(
             counts={
                 query.key: value if value is not None else previous_counts.get(query.key)
@@ -189,4 +211,27 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             },
             queries={key: result for key, result in custom.items() if result is not None},
             open_issues=dict(self._cache.issues),
+            new_events=new_events,
         )
+
+    def _take_events(self) -> tuple[Activity, ...]:
+        """Collect the project's new activity and announce it on the event bus.
+
+        Activity that happened before the first poll is never reported.
+        """
+        if self._event_sequence is None:
+            self._event_sequence = self._feed.sequence
+            return ()
+        events, self._event_sequence = self._feed.events_since(
+            self._event_sequence, self.project_key
+        )
+        base_url = self.config_entry.data["url"]
+        for activity in events:
+            self.hass.bus.async_fire(
+                f"{EVENT_PREFIX}{activity.kind}",
+                {
+                    "entry_id": self.config_entry.entry_id,
+                    **event_attributes(activity, base_url),
+                },
+            )
+        return tuple(events)

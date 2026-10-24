@@ -23,7 +23,7 @@
 | 🚨 | Flags for *has overdue issues* and *has critical open issues* | ✅ available |
 | 🔎 | Query sensors: any YouTrack search as a sensor, with the first issues as attributes | ✅ available |
 | ✅ | Open issues as a Home Assistant to-do list | 🛠 planned |
-| 🔔 | Events when issues are created, resolved or commented | 🛠 planned |
+| 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
 | ✍️ | Actions to create issues, comment, change state, assign and log work | 🛠 planned |
 | 📚 | Knowledge base: search and read articles | 🛠 planned |
 
@@ -80,6 +80,28 @@ are not created.
 | ✔️ | Resolved in the last 7 days | | |
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
+
+### 🔔 Issue events
+
+Every project has an **Issue activity** event entity and fires these events on the Home Assistant bus:
+`youtrack_issue_created`, `youtrack_issue_updated`, `youtrack_issue_resolved`, `youtrack_issue_reopened`
+and `youtrack_issue_commented`. The event data has `issue_id`, `summary`, `project`, `author`, `url` and
+`entry_id`; `youtrack_issue_updated` adds `field`, `old_value` and `new_value`.
+
+```yaml
+automation:
+  - alias: Notify about new issues
+    triggers:
+      - trigger: event
+        event_type: youtrack_issue_created
+    actions:
+      - action: notify.notify
+        data:
+          message: "{{ trigger.event.data.issue_id }}: {{ trigger.event.data.summary }}"
+```
+
+History is never replayed: only activity after Home Assistant has started reading the feed is reported, so
+changes made while Home Assistant was down are missed. Events arrive with the polling interval.
 
 ### 🔎 Query sensors
 

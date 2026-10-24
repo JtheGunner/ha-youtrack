@@ -1,8 +1,0 @@
-[
-  {"id":"7-2.0-0","timestamp":1790000900000,"author":{"login":"example.user","$type":"User"},"targetMember":null,
-   "category":{"id":"CommentsCategory","$type":"ActivityCategory"},"target":{"$type":"IssueComment"},"$type":"CommentActivityItem"},
-  {"id":"0-0.14-10","timestamp":1790000500000,"author":{"login":"example.user","$type":"User"},"targetMember":"__CUSTOM_FIELD__State_2",
-   "category":{"id":"CustomFieldCategory","$type":"ActivityCategory"},
-   "target":{"idReadable":"DEMO-1","project":{"shortName":"DEMO","$type":"Project"},"$type":"Issue"},"$type":"CustomFieldActivityItem"},
-  {"id":"3-1.0-0","timestamp":1790000000000,"target":{"idReadable":"DEMO-1","$type":"Issue"},"$type":"IssueCreatedActivityItem"}
-]
