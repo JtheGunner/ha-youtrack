@@ -105,7 +105,8 @@
           "title": "Remove query sensors",
           "data": {
             "queries": "Query sensors to remove"
-          }
+          },
+          "description": "Tick the query sensors to remove, then submit."
         },
         "watch_issues": {
           "title": "Watch issues",
@@ -124,7 +125,8 @@
       },
       "error": {
         "invalid_query": "YouTrack rejected the query: {error}",
-        "cannot_validate": "The query could not be checked: {error}"
+        "cannot_validate": "The query could not be checked: {error}",
+        "nothing_selected": "Select at least one query sensor to remove."
       }
     }
   },

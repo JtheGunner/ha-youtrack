@@ -287,6 +287,23 @@ async def test_remove_query_removes_sensor(hass: HomeAssistant, mock_client: Mag
     assert registry.async_get(ENTITY) is None
 
 
+async def test_remove_query_without_selection_stays_in_the_form(
+    hass: HomeAssistant, mock_client: MagicMock
+) -> None:
+    """Submitting an empty selection explains itself instead of silently doing nothing."""
+    entry = _entry([QUERY])
+    await _setup(hass, entry)
+
+    result = await _choose(hass, await _reconfigure(hass, entry), "remove_query")
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_QUERIES: []}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_QUERIES: "nothing_selected"}
+    assert _stored(entry) == [QUERY]
+
+
 async def test_reconfigure_needs_loaded_entry(hass: HomeAssistant, mock_client: MagicMock) -> None:
     """The flow cannot validate queries without a connection."""
     mock_client.get_current_user.side_effect = YouTrackConnectionError("down")

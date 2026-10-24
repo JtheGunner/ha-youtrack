@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-10-24
+
+### Fixed
+
+- Removing query sensors uses a checkbox list, so it is clear which sensors are selected, and submitting
+  without a selection shows a hint instead of silently doing nothing.
+
 ## [1.1.1] - 2026-10-24
 
 ### Security

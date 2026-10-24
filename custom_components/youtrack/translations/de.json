@@ -105,7 +105,8 @@
           "title": "Abfrage-Sensoren entfernen",
           "data": {
             "queries": "Zu entfernende Abfrage-Sensoren"
-          }
+          },
+          "description": "Hake die Abfrage-Sensoren an, die entfernt werden sollen, und bestätige."
         },
         "watch_issues": {
           "title": "Tickets beobachten",
@@ -124,7 +125,8 @@
       },
       "error": {
         "invalid_query": "YouTrack hat die Abfrage abgelehnt: {error}",
-        "cannot_validate": "Die Abfrage konnte nicht geprüft werden: {error}"
+        "cannot_validate": "Die Abfrage konnte nicht geprüft werden: {error}",
+        "nothing_selected": "Wähle mindestens einen Abfrage-Sensor zum Entfernen aus."
       }
     }
   },
