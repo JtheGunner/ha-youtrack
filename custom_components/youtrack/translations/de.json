@@ -27,5 +27,29 @@
     "abort": {
       "already_configured": "Diese YouTrack-Instanz ist bereits eingerichtet."
     }
+  },
+  "config_subentries": {
+    "project": {
+      "title": "Projekt hinzufügen",
+      "entry_type": "Projekt",
+      "initiate_flow": {
+        "user": "Projekt hinzufügen"
+      },
+      "step": {
+        "user": {
+          "title": "Projekt hinzufügen",
+          "description": "Wähle das YouTrack-Projekt, das du hinzufügen möchtest. Jedes Projekt wird ein eigenes Gerät.",
+          "data": {
+            "project_id": "Projekt"
+          }
+        }
+      },
+      "abort": {
+        "entry_not_loaded": "Die YouTrack-Verbindung ist noch nicht bereit. Versuche es gleich noch einmal.",
+        "cannot_connect": "Die Projektliste konnte nicht von YouTrack geladen werden.",
+        "no_projects_available": "Es gibt keine weiteren Projekte zum Hinzufügen.",
+        "project_unavailable": "Dieses Projekt ist nicht mehr verfügbar."
+      }
+    }
   }
 }
