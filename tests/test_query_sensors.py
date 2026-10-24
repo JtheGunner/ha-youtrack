@@ -164,7 +164,7 @@ async def test_add_query(hass: HomeAssistant, mock_client: MagicMock) -> None:
 
     result = await _reconfigure(hass, entry)
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["add_query"]
+    assert result["menu_options"] == ["add_query", "watch_issues"]
     result = await _choose(hass, result, "add_query")
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
@@ -224,7 +224,12 @@ async def test_edit_query(hass: HomeAssistant, mock_client: MagicMock) -> None:
     await _setup(hass, entry)
 
     result = await _reconfigure(hass, entry)
-    assert result["menu_options"] == ["add_query", "edit_query", "remove_query"]
+    assert result["menu_options"] == [
+        "add_query",
+        "edit_query",
+        "remove_query",
+        "watch_issues",
+    ]
     result = await _choose(hass, result, "edit_query")
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {CONF_QUERY_ID: "q1"}

@@ -67,7 +67,8 @@
           "menu_options": {
             "add_query": "Abfrage-Sensor hinzufügen",
             "edit_query": "Abfrage-Sensor bearbeiten",
-            "remove_query": "Abfrage-Sensoren entfernen"
+            "remove_query": "Abfrage-Sensoren entfernen",
+            "watch_issues": "Bestimmte Tickets beobachten"
           }
         },
         "add_query": {
@@ -104,6 +105,13 @@
           "title": "Abfrage-Sensoren entfernen",
           "data": {
             "queries": "Zu entfernende Abfrage-Sensoren"
+          }
+        },
+        "watch_issues": {
+          "title": "Tickets beobachten",
+          "description": "Jedes ungelöste Ticket, das zu dieser Suche passt, bekommt einen eigenen Sensor (höchstens {max}). Nutze ein Tag oder eine Liste von Ticket-IDs, zum Beispiel `tag: watch-me` oder `issue id: DEMO-1, DEMO-2`. Die Suche ist auf dieses Projekt beschränkt. Sensoren gelöster oder nicht mehr passender Tickets werden entfernt. Leer lassen, um die Funktion auszuschalten.",
+          "data": {
+            "watch": "Suche"
           }
         }
       },

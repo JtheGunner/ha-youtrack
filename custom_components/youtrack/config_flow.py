@@ -48,6 +48,7 @@ from .const import (
     CONF_TODO_CREATE,
     CONF_URL,
     CONF_VERIFY_SSL,
+    CONF_WATCH,
     DEFAULT_QUERY_TOP,
     DEFAULT_REOPENED_STATE,
     DEFAULT_RESOLVED_STATE,
@@ -55,6 +56,7 @@ from .const import (
     DOMAIN,
     MAX_QUERY_TOP,
     MAX_SCAN_INTERVAL,
+    MAX_WATCHED,
     MIN_QUERY_TOP,
     MIN_SCAN_INTERVAL,
     SUBENTRY_PROJECT,
@@ -67,7 +69,7 @@ from .exceptions import (
     YouTrackPermissionError,
     YouTrackResponseError,
 )
-from .queries import scoped_query
+from .queries import scoped_query, watched_text
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -325,6 +327,7 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
         menu = ["add_query"]
         if self._queries():
             menu += ["edit_query", "remove_query"]
+        menu.append("watch_issues")
         return self.async_show_menu(step_id="reconfigure", menu_options=menu)
 
     async def async_step_add_query(
@@ -383,6 +386,34 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
             step_id="edit_query_details",
             data_schema=self.add_suggested_values_to_schema(
                 QUERY_SCHEMA, user_input or queries[index]
+            ),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_watch_issues(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Choose the issues that get a sensor each; an empty search turns it off."""
+        subentry = self._get_reconfigure_subentry()
+        errors: dict[str, str] = {}
+        placeholders = {"error": "", "max": str(MAX_WATCHED)}
+        if user_input is not None:
+            text = user_input.get(CONF_WATCH, "").strip()
+            error, detail = (
+                (None, "") if not text else await self._validate_query(watched_text(text))
+            )
+            if error is None:
+                return self.async_update_and_abort(
+                    self._get_entry(), subentry, data={**subentry.data, CONF_WATCH: text}
+                )
+            errors[CONF_WATCH] = error
+            placeholders["error"] = detail
+        return self.async_show_form(
+            step_id="watch_issues",
+            data_schema=self.add_suggested_values_to_schema(
+                probatio.Schema({probatio.Optional(CONF_WATCH): TextSelector()}),
+                user_input or {CONF_WATCH: subentry.data.get(CONF_WATCH, "")},
             ),
             errors=errors,
             description_placeholders=placeholders,

@@ -89,3 +89,8 @@ def scoped_query(project: str, text: str) -> str:
     in the user query would escape the project filter.
     """
     return f"project: {{{project}}} and ({text})"
+
+
+def watched_text(text: str) -> str:
+    """Return the search for the unresolved issues a watch expression matches."""
+    return f"{text} and #Unresolved"

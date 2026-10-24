@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Opt-in watched issues: a search (a tag or issue ids) whose unresolved matches each get a sensor, at most 25.
+  Sensors of resolved or no longer matching issues are removed.
 - A calendar per project with the due dates of unresolved issues, for projects that have a `Due Date` field.
 - Diagnostics include the state of each project's knowledge base.
 - README: use cases and known limitations.

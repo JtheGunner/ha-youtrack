@@ -67,7 +67,8 @@
           "menu_options": {
             "add_query": "Add a query sensor",
             "edit_query": "Edit a query sensor",
-            "remove_query": "Remove query sensors"
+            "remove_query": "Remove query sensors",
+            "watch_issues": "Watch specific issues"
           }
         },
         "add_query": {
@@ -104,6 +105,13 @@
           "title": "Remove query sensors",
           "data": {
             "queries": "Query sensors to remove"
+          }
+        },
+        "watch_issues": {
+          "title": "Watch issues",
+          "description": "Every unresolved issue that matches this search gets its own sensor (at most {max}). Use a tag or a list of issue ids, for example `tag: watch-me` or `issue id: DEMO-1, DEMO-2`. The search is limited to this project. Sensors of issues that are resolved or no longer match are removed. Leave empty to turn this off.",
+          "data": {
+            "watch": "Search"
           }
         }
       },

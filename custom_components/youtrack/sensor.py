@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
@@ -15,6 +16,7 @@ from homeassistant.components.sensor import (
 from .entity import YouTrackKnowledgeBaseEntity, YouTrackProjectEntity, remove_stale_entities
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from datetime import datetime
 
     from homeassistant.core import HomeAssistant
@@ -23,11 +25,13 @@ if TYPE_CHECKING:
     from .coordinator import YouTrackProjectCoordinator
     from .data import YouTrackConfigEntry
     from .kb_coordinator import KnowledgeBaseCoordinator
+    from .models import Issue
     from .queries import CustomQuery
 
 PARALLEL_UPDATES = 0
 
 QUERY_KEY_PREFIX = "query_"
+WATCH_KEY_PREFIX = "watch_"
 SUMMARY_LIMIT = 120
 
 
@@ -84,6 +88,12 @@ async def async_setup_entry(
             [YouTrackArticleCountSensor(knowledge_base), YouTrackLastArticleSensor(knowledge_base)],
             config_subentry_id=subentry_id,
         )
+        _track_watched_issues(
+            hass,
+            entry,
+            coordinator,
+            partial(async_add_entities, config_subentry_id=subentry_id),
+        )
         remove_stale_entities(
             hass,
             entry,
@@ -94,6 +104,34 @@ async def async_setup_entry(
                 for query in coordinator.custom_queries
             },
         )
+
+
+def _track_watched_issues(
+    hass: HomeAssistant,
+    entry: YouTrackConfigEntry,
+    coordinator: YouTrackProjectCoordinator,
+    add_entities: Callable[[list[YouTrackWatchedIssueSensor]], None],
+) -> None:
+    """Keep one sensor per watched issue; sensors of issues that left the watch list go away."""
+    subentry_id = coordinator.subentry_id
+    prefix = f"{subentry_id}_{WATCH_KEY_PREFIX}"
+    known: set[str] = set()
+
+    def sync() -> None:
+        issues = coordinator.watched_issues
+        if coordinator.watch_query is None:
+            issues = {}
+        if issues is None:
+            return
+        fresh = [issue_id for issue_id in issues if issue_id not in known]
+        known.update(fresh)
+        if fresh:
+            add_entities([YouTrackWatchedIssueSensor(coordinator, issue_id) for issue_id in fresh])
+        remove_stale_entities(hass, entry, "sensor", prefix, {f"{prefix}{key}" for key in issues})
+        known.intersection_update(issues)
+
+    entry.async_on_unload(coordinator.async_add_listener(sync))
+    sync()
 
 
 class YouTrackCountSensor(YouTrackProjectEntity, SensorEntity):
@@ -207,3 +245,44 @@ class YouTrackLastArticleSensor(YouTrackKnowledgeBaseEntity, SensorEntity):
             for article in self.coordinator.data.recent
         ]
         return {**(recent[0] if recent else {}), "recent": recent}
+
+
+class YouTrackWatchedIssueSensor(YouTrackProjectEntity, SensorEntity):
+    """One watched issue: its state is the issue's State field."""
+
+    _attr_icon = "mdi:eye"
+
+    def __init__(self, coordinator: YouTrackProjectCoordinator, issue_id: str) -> None:
+        """Create the sensor."""
+        super().__init__(coordinator, f"{WATCH_KEY_PREFIX}{issue_id}")
+        self._issue_id = issue_id
+        self._attr_name = issue_id
+
+    @property
+    def _issue(self) -> Issue | None:
+        issues = self.coordinator.watched_issues
+        return issues.get(self._issue_id) if issues else None
+
+    @property
+    def available(self) -> bool:
+        """The sensor is unavailable while the issue is not in the latest result."""
+        return super().available and self._issue is not None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the issue's state."""
+        return issue.state if (issue := self._issue) else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the issue's details."""
+        issue = self._issue
+        if issue is None:
+            return {}
+        return {
+            "summary": issue.summary[:SUMMARY_LIMIT],
+            "assignee": issue.assignee,
+            "priority": issue.priority,
+            "type": issue.type,
+            "url": f"{self.coordinator.config_entry.data['url']}/issue/{issue.id}",
+        }
