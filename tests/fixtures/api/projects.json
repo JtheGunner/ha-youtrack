@@ -1,0 +1,5 @@
+[
+  {"shortName":"DEMO","archived":false,"name":"Demo Project","id":"0-1","$type":"Project"},
+  {"shortName":"OPS","archived":false,"name":"Operations","id":"0-2","$type":"Project"},
+  {"shortName":"OLD","archived":true,"name":"Archived Project","id":"0-3","$type":"Project"}
+]
