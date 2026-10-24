@@ -403,5 +403,18 @@
     "invalid_article_id": {
       "message": "The article ID \"{article_id}\" is not valid."
     }
+  },
+  "issues": {
+    "project_missing": {
+      "title": "Project {project} no longer exists in YouTrack",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Project {project} no longer exists in YouTrack",
+            "description": "The project {project} of {instance} cannot be found any more. It was deleted, archived without access, or your token lost access to it. Its entities are not updated. Select **Submit** to remove the project from Home Assistant, or restore access in YouTrack and reload the integration."
+          }
+        }
+      }
+    }
   }
 }

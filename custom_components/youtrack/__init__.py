@@ -11,15 +11,17 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .activity import ActivityFeed
 from .api import YouTrackClient
-from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL, DOMAIN
+from .const import CONF_API_TOKEN, CONF_PROJECT_ID, CONF_URL, CONF_VERIFY_SSL, DOMAIN
 from .coordinator import YouTrackProjectCoordinator
 from .data import YouTrackRuntimeData
 from .exceptions import YouTrackAuthError, YouTrackError, YouTrackPermissionError
 from .kb_coordinator import KnowledgeBaseCoordinator
+from .repairs import async_sync_projects
 from .services import async_setup_services
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.device_registry import DeviceEntry
     from homeassistant.helpers.typing import ConfigType
 
     from .data import YouTrackConfigEntry
@@ -52,7 +54,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
         raise ConfigEntryNotReady(f"Cannot reach YouTrack: {err}") from err
 
     entry.runtime_data = YouTrackRuntimeData(client=client, feed=ActivityFeed(client))
-    for subentry in entry.subentries.values():
+    skipped = await async_sync_projects(hass, entry)
+    for subentry in list(entry.subentries.values()):
+        if subentry.subentry_id in skipped:
+            continue
         coordinator = YouTrackProjectCoordinator(hass, entry, subentry)
         await coordinator.async_config_entry_first_refresh()
         entry.runtime_data.coordinators[subentry.subentry_id] = coordinator
@@ -69,6 +74,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
 async def async_unload_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> bool:
     """Unload the config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: YouTrackConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Allow deleting the device of a project that is no longer set up."""
+    active = {
+        (DOMAIN, f"{entry.entry_id}_{subentry.data[CONF_PROJECT_ID]}")
+        for subentry in entry.subentries.values()
+        if subentry.subentry_id in entry.runtime_data.coordinators
+    }
+    return not (device_entry.identifiers & active)
 
 
 async def _async_reload_on_update(hass: HomeAssistant, entry: YouTrackConfigEntry) -> None:
