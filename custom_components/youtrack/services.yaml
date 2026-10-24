@@ -1,0 +1,110 @@
+create_issue:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: youtrack
+    summary:
+      required: true
+      example: Heating pump makes noise
+      selector:
+        text:
+    description:
+      selector:
+        text:
+          multiline: true
+    type:
+      example: Task
+      selector:
+        text:
+    priority:
+      example: Major
+      selector:
+        text:
+    assignee:
+      example: example.user
+      selector:
+        text:
+
+add_comment:
+  fields:
+    issue_id:
+      required: true
+      example: DEMO-12
+      selector:
+        text:
+    text:
+      required: true
+      example: Fixed with the new firmware.
+      selector:
+        text:
+          multiline: true
+    device_id:
+      selector:
+        device:
+          integration: youtrack
+
+transition:
+  fields:
+    issue_id:
+      required: true
+      example: DEMO-12
+      selector:
+        text:
+    state:
+      required: true
+      example: In Progress
+      selector:
+        text:
+    field:
+      default: State
+      selector:
+        text:
+    device_id:
+      selector:
+        device:
+          integration: youtrack
+
+assign:
+  fields:
+    issue_id:
+      required: true
+      example: DEMO-12
+      selector:
+        text:
+    assignee:
+      required: true
+      example: example.user
+      selector:
+        text:
+    device_id:
+      selector:
+        device:
+          integration: youtrack
+
+log_work:
+  fields:
+    issue_id:
+      required: true
+      example: DEMO-12
+      selector:
+        text:
+    duration:
+      required: true
+      example: 1h 30m
+      selector:
+        text:
+    text:
+      selector:
+        text:
+    date:
+      selector:
+        datetime:
+    work_type:
+      selector:
+        text:
+    device_id:
+      selector:
+        device:
+          integration: youtrack

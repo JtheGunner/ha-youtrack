@@ -6,21 +6,32 @@ from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .activity import ActivityFeed
 from .api import YouTrackClient
-from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL
+from .const import CONF_API_TOKEN, CONF_URL, CONF_VERIFY_SSL, DOMAIN
 from .coordinator import YouTrackProjectCoordinator
 from .data import YouTrackRuntimeData
 from .exceptions import YouTrackAuthError, YouTrackError, YouTrackPermissionError
+from .services import async_setup_services
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.typing import ConfigType
 
     from .data import YouTrackConfigEntry
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.EVENT, Platform.SENSOR, Platform.TODO]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the service actions once for all entries."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> bool:

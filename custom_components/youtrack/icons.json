@@ -50,5 +50,22 @@
         "default": "mdi:format-list-checks"
       }
     }
+  },
+  "services": {
+    "create_issue": {
+      "service": "mdi:plus-box"
+    },
+    "add_comment": {
+      "service": "mdi:comment-plus"
+    },
+    "transition": {
+      "service": "mdi:swap-horizontal"
+    },
+    "assign": {
+      "service": "mdi:account-arrow-right"
+    },
+    "log_work": {
+      "service": "mdi:timer-plus"
+    }
   }
 }

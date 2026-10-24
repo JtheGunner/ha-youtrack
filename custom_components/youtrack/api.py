@@ -14,6 +14,7 @@ import aiohttp
 
 from .exceptions import (
     YouTrackAuthError,
+    YouTrackBadRequestError,
     YouTrackConnectionError,
     YouTrackInvalidQueryError,
     YouTrackNotFoundError,
@@ -188,6 +189,60 @@ class YouTrackClient:
         activities = (Activity.from_json(item) for item in page if isinstance(item, dict))
         return ActivityPage([a for a in activities if a is not None], len(page))
 
+    async def create_issue(
+        self, project_id: str, summary: str, description: str | None = None
+    ) -> str:
+        """Create an issue and return its readable id (for example ``DEMO-12``)."""
+        body: dict[str, Any] = {"project": {"id": project_id}, "summary": summary}
+        if description:
+            body["description"] = description
+        created = await self._request(
+            "POST", "/api/issues", params={"fields": "idReadable"}, json=body
+        )
+        issue_id = created.get("idReadable") if isinstance(created, dict) else None
+        if not isinstance(issue_id, str):
+            raise YouTrackResponseError("The created issue has no id")
+        return issue_id
+
+    async def add_comment(self, issue_id: str, text: str) -> None:
+        """Add a comment to an issue."""
+        await self._request(
+            "POST", f"/api/issues/{issue_id}/comments", params={"fields": "id"}, json={"text": text}
+        )
+
+    async def run_command(self, issue_id: str, command: str) -> None:
+        """Apply a YouTrack command (for example ``State {In Progress}``) to an issue."""
+        await self._request(
+            "POST",
+            "/api/commands",
+            json={"query": command, "issues": [{"idReadable": issue_id}]},
+            allow_empty=True,
+        )
+
+    async def log_work(
+        self,
+        issue_id: str,
+        duration: str,
+        *,
+        text: str | None = None,
+        date: datetime | None = None,
+        work_type: str | None = None,
+    ) -> None:
+        """Log spent time (``duration`` like ``1h 30m``) on an issue."""
+        body: dict[str, Any] = {"duration": {"presentation": duration}}
+        if text:
+            body["text"] = text
+        if date:
+            body["date"] = int(date.timestamp() * 1000)
+        if work_type:
+            body["type"] = {"name": work_type}
+        await self._request(
+            "POST",
+            f"/api/issues/{issue_id}/timeTracking/workItems",
+            params={"fields": "id"},
+            json=body,
+        )
+
     async def _get_json(self, path: str, params: Mapping[str, str | int] | None = None) -> Any:
         return await self._request("GET", path, params=params)
 
@@ -198,6 +253,7 @@ class YouTrackClient:
         *,
         params: Mapping[str, str | int] | None = None,
         json: Any = None,
+        allow_empty: bool = False,
     ) -> Any:
         """Send a request and return the decoded JSON body."""
         url = f"{self._base_url}{path}"
@@ -212,14 +268,14 @@ class YouTrackClient:
                 allow_redirects=False,
                 ssl=self._ssl,
             ) as response:
-                return await self._decode(response)
+                return await self._decode(response, allow_empty=allow_empty)
         except TimeoutError as err:
             raise YouTrackConnectionError("Request to YouTrack timed out") from err
         except aiohttp.ClientError as err:
             raise YouTrackConnectionError(f"Cannot connect to YouTrack: {err}") from err
 
     @staticmethod
-    async def _decode(response: aiohttp.ClientResponse) -> Any:
+    async def _decode(response: aiohttp.ClientResponse, *, allow_empty: bool = False) -> Any:
         """Map the HTTP status to an exception or return the JSON body."""
         status = response.status
         if status == 401:
@@ -246,8 +302,14 @@ class YouTrackClient:
             raise YouTrackInvalidQueryError(
                 str(body.get("error_description", "Invalid search query"))
             )
+        if status == 400 and isinstance(body, dict):
+            raise YouTrackBadRequestError(
+                str(body.get("error_description") or body.get("error") or "Bad request")
+            )
         if status >= 400:
             raise YouTrackResponseError(f"Unexpected HTTP status {status}")
+        if body is _NOT_JSON and allow_empty:
+            return None
         if body is _NOT_JSON:
             raise YouTrackResponseError("Response is not valid JSON; check the URL")
         return body

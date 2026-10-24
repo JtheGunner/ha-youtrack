@@ -134,3 +134,15 @@ Verified live:
 - Creating or resolving an issue also writes custom field items within milliseconds (initial values, `State`
   change); the integration drops field changes within 5 s of a creation, resolution or reopening.
 - The `targetMember` of field changes looks like `__CUSTOM_FIELD__State_2`.
+
+## Write operations (HAY-23)
+
+- `POST /api/commands` with `{"query": "<command>", "issues": [{"idReadable": "DEMO-1"}]}` applies a YouTrack
+  command; the answer body may be empty. Verified live: `State In Progress`, `Assignee <login>` and
+  `Priority Major Type Feature` work. Quotes and braces are **not** accepted in command values
+  (`State {In Progress}` fails with `State expected: {In Progress}`), values with spaces are written bare.
+  Invalid commands answer `400` with `error_description` (`Unknown command: ...`).
+- Unverified (not run against the live instance to avoid changing real data): `POST /api/issues` with
+  `{project: {id}, summary, description}`, `POST /api/issues/{id}/comments`,
+  `POST /api/issues/{id}/timeTracking/workItems` with `{duration: {presentation}, text, date, type: {name}}`,
+  and `Assignee Unassigned` to clear the assignee.

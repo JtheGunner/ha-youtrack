@@ -24,7 +24,7 @@
 | 🔎 | Query sensors: any YouTrack search as a sensor, with the first issues as attributes | ✅ available |
 | ✅ | Open issues as a Home Assistant to-do list (read-only for now) | ✅ available |
 | 🔔 | Events when issues are created, updated, resolved, reopened or commented | ✅ available |
-| ✍️ | Actions to create issues, comment, change state, assign and log work | 🛠 planned |
+| ✍️ | Actions to create issues, comment, change state, assign and log work | ✅ available |
 | 📚 | Knowledge base: search and read articles | 🛠 planned |
 
 Each YouTrack instance is set up once; every project you add becomes its own device.
@@ -80,6 +80,31 @@ are not created.
 | ✔️ | Resolved in the last 7 days | | |
 | 🛑 | Critical open issues | Unresolved with priority `Show-stopper` or `Critical` | field `Priority` |
 | 🚨 | Has overdue issues / Has critical open issues | On while the count above is greater than zero | as above |
+
+### ✍️ Actions
+
+| Action | Fields | Notes |
+|---|---|---|
+| `youtrack.create_issue` | `device_id` (project), `summary`, `description`, `type`, `priority`, `assignee` | Returns `issue_id` and `url`. |
+| `youtrack.add_comment` | `issue_id`, `text` | |
+| `youtrack.transition` | `issue_id`, `state`, `field` (default `State`) | |
+| `youtrack.assign` | `issue_id`, `assignee` (login) | |
+| `youtrack.log_work` | `issue_id`, `duration` (`1h 30m`), `text`, `date`, `work_type` | Units: `w`, `d`, `h`, `m`. |
+
+`device_id` is optional for the issue actions as long as only one YouTrack instance is set up; otherwise pick
+any project of the instance you mean. Type, priority, state and assignee are applied with YouTrack
+commands, so values are matched like in the YouTrack command line (`In Progress`, not `"In Progress"`).
+Values with quotes, braces or line breaks are refused. The token's user needs permission for the action;
+if YouTrack denies it, the action fails with a clear message.
+
+```yaml
+action: youtrack.create_issue
+data:
+  device_id: <project device>
+  summary: Heating pump is noisy
+  priority: Major
+response_variable: created
+```
 
 ### ✅ To-do lists
 

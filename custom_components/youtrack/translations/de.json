@@ -187,5 +187,162 @@
         "name": "Offene Tickets"
       }
     }
+  },
+  "services": {
+    "create_issue": {
+      "name": "Ticket erstellen",
+      "description": "Erstellt ein Ticket im gewählten Projekt und gibt ID und Link zurück.",
+      "fields": {
+        "summary": {
+          "name": "Titel",
+          "description": "Der Titel des Tickets."
+        },
+        "description": {
+          "name": "Beschreibung",
+          "description": "Der Text des Tickets."
+        },
+        "type": {
+          "name": "Typ",
+          "description": "Der Tickettyp, zum Beispiel Task. Er muss im Projekt existieren."
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "Die Priorität, zum Beispiel Major. Sie muss im Projekt existieren."
+        },
+        "assignee": {
+          "name": "Bearbeiter",
+          "description": "Der Login des Benutzers."
+        }
+      }
+    },
+    "add_comment": {
+      "name": "Kommentar hinzufügen",
+      "description": "Fügt einem Ticket einen Kommentar hinzu.",
+      "fields": {
+        "issue_id": {
+          "name": "Ticket-ID",
+          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+        },
+        "text": {
+          "name": "Kommentar",
+          "description": "Der Text. Markdown wird unterstützt."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Nur bei mehreren YouTrack-Instanzen nötig: ein beliebiges Projekt der Instanz."
+        }
+      }
+    },
+    "transition": {
+      "name": "Status ändern",
+      "description": "Setzt den Status eines Tickets.",
+      "fields": {
+        "issue_id": {
+          "name": "Ticket-ID",
+          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+        },
+        "state": {
+          "name": "Status",
+          "description": "Der neue Status, zum Beispiel In Progress."
+        },
+        "field": {
+          "name": "Feld",
+          "description": "Der Name des Statusfelds, falls es nicht State heißt."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Nur bei mehreren YouTrack-Instanzen nötig: ein beliebiges Projekt der Instanz."
+        }
+      }
+    },
+    "assign": {
+      "name": "Ticket zuweisen",
+      "description": "Weist ein Ticket einem Benutzer zu oder entfernt die Zuweisung mit Unassigned.",
+      "fields": {
+        "issue_id": {
+          "name": "Ticket-ID",
+          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+        },
+        "assignee": {
+          "name": "Bearbeiter",
+          "description": "Der Login des Benutzers oder Unassigned."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Nur bei mehreren YouTrack-Instanzen nötig: ein beliebiges Projekt der Instanz."
+        }
+      }
+    },
+    "log_work": {
+      "name": "Arbeit erfassen",
+      "description": "Erfasst die aufgewendete Zeit für ein Ticket.",
+      "fields": {
+        "issue_id": {
+          "name": "Ticket-ID",
+          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+        },
+        "duration": {
+          "name": "Dauer",
+          "description": "Die aufgewendete Zeit, zum Beispiel 1h 30m. Einheiten sind w, d, h und m."
+        },
+        "text": {
+          "name": "Text",
+          "description": "Der Text. Markdown wird unterstützt."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Wann die Arbeit stattfand. Standard ist jetzt."
+        },
+        "work_type": {
+          "name": "Arbeitstyp",
+          "description": "Der Name des Arbeitstyps, falls das Projekt welche nutzt."
+        },
+        "device_id": {
+          "name": "Projekt",
+          "description": "Nur bei mehreren YouTrack-Instanzen nötig: ein beliebiges Projekt der Instanz."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_command_value": {
+      "message": "Der Wert für {field} enthält Zeichen, die YouTrack-Befehle nicht akzeptieren."
+    },
+    "invalid_issue_id": {
+      "message": "{issue_id} ist keine Ticket-ID wie DEMO-12."
+    },
+    "invalid_duration": {
+      "message": "{duration} ist keine Dauer wie 1h 30m."
+    },
+    "select_one_project": {
+      "message": "Wähle genau ein YouTrack-Projekt."
+    },
+    "unknown_project": {
+      "message": "Das gewählte Gerät ist kein geladenes YouTrack-Projekt."
+    },
+    "select_instance": {
+      "message": "Es gibt mehr als eine YouTrack-Instanz. Wähle ein Projekt der gemeinten Instanz."
+    },
+    "not_loaded": {
+      "message": "YouTrack ist nicht eingerichtet oder nicht verbunden."
+    },
+    "auth_failed": {
+      "message": "YouTrack hat den Token abgelehnt. Authentifiziere die Integration neu."
+    },
+    "permission_denied": {
+      "message": "YouTrack hat die Anfrage abgelehnt. Dem Benutzer des Tokens fehlt die Berechtigung."
+    },
+    "not_found": {
+      "message": "YouTrack hat dieses Ticket oder Projekt nicht gefunden."
+    },
+    "rejected": {
+      "message": "YouTrack hat die Anfrage abgelehnt: {reason}"
+    },
+    "request_failed": {
+      "message": "Die Anfrage an YouTrack ist fehlgeschlagen: {error}"
+    },
+    "created_without_fields": {
+      "message": "Ticket {issue_id} wurde erstellt, aber Typ, Priorität oder Bearbeiter konnten nicht gesetzt werden: {error}"
+    }
   }
 }
