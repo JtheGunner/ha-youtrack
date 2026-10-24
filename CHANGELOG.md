@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-24
+
+### Security
+
+- The Assist search tools reject searches with unbalanced brackets, which could have escaped the restriction to the
+  configured projects, and drop any result from a project that is not set up.
+
 ## [1.1.0] - 2026-10-24
 
 ### Added

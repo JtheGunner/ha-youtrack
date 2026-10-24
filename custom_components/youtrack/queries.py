@@ -94,3 +94,18 @@ def scoped_query(project: str, text: str) -> str:
 def watched_text(text: str) -> str:
     """Return the search for the unresolved issues a watch expression matches."""
     return f"{text} and #Unresolved"
+
+
+def is_balanced(text: str) -> bool:
+    """Return True if every ``(`` and ``{`` in ``text`` is closed in order and none is closed early.
+
+    An unbalanced query could close the group that restricts it to a project.
+    """
+    stack: list[str] = []
+    pairs = {")": "(", "}": "{"}
+    for char in text:
+        if char in "({":
+            stack.append(char)
+        elif char in pairs and (not stack or stack.pop() != pairs[char]):
+            return False
+    return not stack

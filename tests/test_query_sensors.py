@@ -297,3 +297,13 @@ async def test_reconfigure_needs_loaded_entry(hass: HomeAssistant, mock_client: 
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "entry_not_loaded"
+
+
+def test_is_balanced() -> None:
+    """Only brackets that close in order are balanced."""
+    from custom_components.youtrack.queries import is_balanced
+
+    assert is_balanced("a (b {c d}) e")
+    assert not is_balanced("a) or (b")
+    assert not is_balanced("(a")
+    assert not is_balanced("{a)")

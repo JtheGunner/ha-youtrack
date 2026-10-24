@@ -12,7 +12,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import llm
 
 from .const import CONF_LLM_CREATE, CONF_PROJECT_ID, CONF_PROJECT_KEY, DOMAIN
-from .queries import scoped_query
+from .queries import is_balanced, scoped_query
 from .services import call_api, service_error
 
 if TYPE_CHECKING:
@@ -52,6 +52,12 @@ class _Scope:
                 for subentry in entry.subentries.values()
             },
         )
+
+    def query(self, text: str) -> str:
+        """Return ``text`` if it cannot break out of the project restriction."""
+        if not is_balanced(text):
+            raise service_error("rejected", reason="unbalanced brackets in the search")
+        return text
 
     def keys(self, requested: str | None) -> list[str]:
         """Return the project keys a request covers; unknown keys are refused."""
@@ -115,20 +121,23 @@ class SearchIssuesTool(_YouTrackTool):
     ) -> llm.ToolResult:
         """Search the issues of the allowed projects."""
         args = self.parameters(tool_input.tool_args)
+        query = self._scope.query(args["query"])
         keys = self._scope.keys(args.get("project"))
         limit = args["limit"]
         pages = await call_api(
             hass,
             self._scope.entry,
             lambda: asyncio.gather(
-                *(
-                    self._client.get_issues(scoped_query(key, args["query"]), top=limit)
-                    for key in keys
-                )
+                *(self._client.get_issues(scoped_query(key, query), top=limit) for key in keys)
             ),
         )
         issues = sorted(
-            (issue for page in pages for issue in page),
+            (
+                issue
+                for page in pages
+                for issue in page
+                if issue.project in self._scope.projects  # second line of defence
+            ),
             key=lambda issue: issue.updated.timestamp() if issue.updated else 0,
             reverse=True,
         )[:limit]
@@ -159,6 +168,7 @@ class SearchArticlesTool(_YouTrackTool):
     ) -> llm.ToolResult:
         """Search the articles of the allowed projects."""
         args = self.parameters(tool_input.tool_args)
+        query = self._scope.query(args["query"])
         keys = self._scope.keys(args.get("project"))
         limit = args["limit"]
         pages = await call_api(
@@ -166,13 +176,18 @@ class SearchArticlesTool(_YouTrackTool):
             self._scope.entry,
             lambda: asyncio.gather(
                 *(
-                    self._client.get_articles(query=scoped_query(key, args["query"]), top=limit)
+                    self._client.get_articles(query=scoped_query(key, query), top=limit)
                     for key in keys
                 )
             ),
         )
         articles = sorted(
-            (article for page in pages for article in page),
+            (
+                article
+                for page in pages
+                for article in page
+                if article.project in self._scope.projects  # second line of defence
+            ),
             key=lambda article: article.updated.timestamp() if article.updated else 0,
             reverse=True,
         )[:limit]

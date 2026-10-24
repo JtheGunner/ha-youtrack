@@ -17,7 +17,7 @@ from custom_components.youtrack.const import (
     SUBENTRY_PROJECT,
 )
 from custom_components.youtrack.exceptions import YouTrackConnectionError
-from custom_components.youtrack.models import Article
+from custom_components.youtrack.models import Article, Issue
 
 from .common import load_json_fixture
 from .conftest import URL
@@ -268,3 +268,42 @@ def _article(content: str | None, *, project: str = "DEMO") -> Article:
         "project": {"shortName": project},
     }
     return Article.from_json(item)
+
+
+@pytest.mark.parametrize("tool", ["search_youtrack_issues", "search_youtrack_articles"])
+@pytest.mark.parametrize("query", ["x) or (project: SECRET", "x} or {a", "(("])
+async def test_queries_that_could_leave_the_project_are_refused(
+    hass: HomeAssistant,
+    mock_client: MagicMock,
+    mock_project_entry: MockConfigEntry,
+    tool: str,
+    query: str,
+) -> None:
+    """Unbalanced brackets are rejected before anything is sent to YouTrack."""
+    api = await _api(hass, mock_project_entry)
+    mock_client.get_issues.reset_mock()
+    mock_client.get_articles.reset_mock()
+
+    with pytest.raises(ServiceValidationError, match="unbalanced"):
+        await _call(api, tool, query=query)
+    mock_client.get_issues.assert_not_awaited()
+    mock_client.get_articles.assert_not_awaited()
+
+
+async def test_results_from_other_projects_are_dropped(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """Even if YouTrack returned foreign items, they never reach the assistant."""
+    api = await _api(hass, mock_project_entry)
+    foreign_issue = Issue.from_json(
+        {
+            **load_json_fixture("issues.json")[0],
+            "idReadable": "SECRET-1",
+            "project": {"shortName": "SECRET"},
+        }
+    )
+    mock_client.get_issues.return_value = [foreign_issue]
+    mock_client.get_articles.return_value = [_article("x", project="SECRET")]
+
+    assert (await _call(api, "search_youtrack_issues", query="x"))["issues"] == []
+    assert (await _call(api, "search_youtrack_articles", query="x"))["articles"] == []
