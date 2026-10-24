@@ -159,6 +159,20 @@ assignee and link. The query is limited to the project automatically.
 
 ---
 
+## 📚 Examples
+
+| | Example | What it does |
+|---|---|---|
+| 🖥️ | [`docs/examples/dashboard.yaml`](docs/examples/dashboard.yaml) | A project overview: tiles, a gauge, the to-do list, history and activity. Replace `demo_project` with your project's entity prefix. |
+| 🔔 | [`notify-critical-issues`](blueprints/automation/youtrack/notify-critical-issues.yaml) | Runs any action when the number of critical open issues goes up. |
+| 🛠️ | [`issue-for-unavailable-entity`](blueprints/automation/youtrack/issue-for-unavailable-entity.yaml) | Creates a YouTrack issue when an entity has been unavailable for a set time. |
+
+Import a blueprint in Home Assistant under **Settings → Automations & scenes → Blueprints → Import
+blueprint** with the raw GitHub address of its file, or copy the file to
+`config/blueprints/automation/youtrack/`.
+
+---
+
 ## 🧯 Troubleshooting
 
 - **"The address did not answer like a YouTrack server"** – check the URL, including a possible context path.

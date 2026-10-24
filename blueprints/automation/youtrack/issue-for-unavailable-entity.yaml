@@ -1,0 +1,55 @@
+blueprint:
+  name: YouTrack - create an issue when an entity stays unavailable
+  description: >-
+    Creates a YouTrack issue when an entity has been unavailable for a while, so broken devices do
+    not go unnoticed.
+  domain: automation
+  author: JtheGunner
+  input:
+    watched_entity:
+      name: Entity to watch
+      selector:
+        entity:
+    wait_minutes:
+      name: Unavailable for
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: minutes
+    project:
+      name: YouTrack project
+      description: The project device the issue is created in.
+      selector:
+        device:
+          integration: youtrack
+    priority:
+      name: Priority
+      description: Leave empty to use the project's default priority.
+      default: ""
+      selector:
+        text:
+
+mode: single
+
+variables:
+  watched_entity: !input watched_entity
+  project: !input project
+  priority: !input priority
+
+triggers:
+  - trigger: state
+    entity_id: !input watched_entity
+    to: unavailable
+    for:
+      minutes: !input wait_minutes
+
+actions:
+  - action: youtrack.create_issue
+    data: >-
+      {{ {
+        'device_id': project,
+        'summary': (state_attr(watched_entity, 'friendly_name') or watched_entity) ~ ' is unavailable',
+        'description': watched_entity ~ ' has been unavailable for ' ~ trigger.for ~ '. Created by Home Assistant.'
+      } | combine({'priority': priority} if priority else {}) }}

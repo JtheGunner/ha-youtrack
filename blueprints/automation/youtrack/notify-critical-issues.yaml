@@ -1,0 +1,41 @@
+blueprint:
+  name: YouTrack - notify about new critical issues
+  description: >-
+    Sends a notification when the number of critical open issues of a project goes up.
+  domain: automation
+  author: JtheGunner
+  input:
+    critical_count:
+      name: Critical open issues sensor
+      description: The "Critical open issues" sensor of a YouTrack project.
+      selector:
+        entity:
+          domain: sensor
+          integration: youtrack
+    notify_action:
+      name: Notification
+      description: The action that delivers the message, for example a notify action.
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input critical_count
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none
+         and trigger.from_state.state | is_number
+         and trigger.to_state.state | is_number
+         and trigger.to_state.state | int > trigger.from_state.state | int }}
+
+actions:
+  - variables:
+      count: "{{ trigger.to_state.state }}"
+      project: "{{ trigger.to_state.attributes.friendly_name }}"
+  - choose: []
+    default: !input notify_action
