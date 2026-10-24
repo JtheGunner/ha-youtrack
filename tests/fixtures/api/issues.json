@@ -1,0 +1,18 @@
+[
+  {"idReadable":"DEMO-2","summary":"Second issue","created":1790000100000,"updated":1790000900000,"resolved":null,
+   "project":{"shortName":"DEMO","$type":"Project"},"reporter":{"login":"example.user","$type":"User"},
+   "customFields":[
+     {"name":"Priority","value":{"name":"Major","$type":"EnumBundleElement"},"$type":"SingleEnumIssueCustomField"},
+     {"name":"Type","value":{"name":"Task","$type":"EnumBundleElement"},"$type":"SingleEnumIssueCustomField"},
+     {"name":"State","value":{"name":"In Progress","$type":"StateBundleElement"},"$type":"StateIssueCustomField"},
+     {"name":"Assignee","value":{"login":"example.user","name":"Example User","$type":"User"},"$type":"SingleUserIssueCustomField"}
+   ],"$type":"Issue"},
+  {"idReadable":"DEMO-1","summary":"First issue","created":1790000000000,"updated":1790000500000,"resolved":1790000500000,
+   "project":{"shortName":"DEMO","$type":"Project"},"reporter":{"login":"example.user","$type":"User"},
+   "customFields":[
+     {"name":"Priority","value":{"name":"Critical","$type":"EnumBundleElement"},"$type":"SingleEnumIssueCustomField"},
+     {"name":"Type","value":{"name":"Bug","$type":"EnumBundleElement"},"$type":"SingleEnumIssueCustomField"},
+     {"name":"State","value":{"name":"Done","$type":"StateBundleElement"},"$type":"StateIssueCustomField"},
+     {"name":"Assignee","value":null,"$type":"SingleUserIssueCustomField"}
+   ],"$type":"Issue"}
+]
