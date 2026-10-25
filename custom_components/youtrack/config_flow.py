@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -12,6 +13,7 @@ from homeassistant.config_entries import (
     ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
+    ConfigSubentry,
     ConfigSubentryFlow,
     OptionsFlow,
     SubentryFlowResult,
@@ -37,6 +39,7 @@ from .const import (
     CONF_API_TOKEN,
     CONF_LLM_CREATE,
     CONF_PROJECT_ID,
+    CONF_PROJECT_IDS,
     CONF_PROJECT_KEY,
     CONF_QUERIES,
     CONF_QUERY_ID,
@@ -78,6 +81,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from .data import YouTrackConfigEntry
+    from .models import Project
 
 USER_SCHEMA = probatio.Schema(
     {
@@ -253,13 +257,17 @@ class YouTrackConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+def _project_data(project: Project) -> dict[str, str]:
+    return {CONF_PROJECT_ID: project.id, CONF_PROJECT_KEY: project.short_name}
+
+
 class ProjectSubentryFlowHandler(ConfigSubentryFlow):
     """Add a YouTrack project to an instance and manage its custom query sensors."""
 
     _editing: str = ""
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
-        """Let the user pick one of the projects that are not added yet."""
+        """Let the user pick the projects that are not added yet."""
         entry: YouTrackConfigEntry = self._get_entry()
         if entry.state is not ConfigEntryState.LOADED:
             return self.async_abort(reason="entry_not_loaded")
@@ -273,15 +281,15 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
         if not available:
             return self.async_abort(reason="no_projects_available")
 
+        errors: dict[str, str] = {}
         if user_input is not None:
-            project = available.get(user_input[CONF_PROJECT_ID])
-            if project is None:
+            selected: list[str] = user_input.get(CONF_PROJECT_IDS, [])
+            if not selected:
+                errors[CONF_PROJECT_IDS] = "no_project_selected"
+            elif any(project_id not in available for project_id in selected):
                 return self.async_abort(reason="project_unavailable")
-            return self.async_create_entry(
-                title=project.name,
-                data={CONF_PROJECT_ID: project.id, CONF_PROJECT_KEY: project.short_name},
-                unique_id=project.id,
-            )
+            else:
+                return self._add_projects([available[project_id] for project_id in selected])
 
         options = [
             SelectOptionDict(value=project.id, label=f"{project.name} ({project.short_name})")
@@ -291,12 +299,31 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
             step_id="user",
             data_schema=probatio.Schema(
                 {
-                    probatio.Required(CONF_PROJECT_ID): SelectSelector(
-                        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+                    probatio.Optional(CONF_PROJECT_IDS): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options, multiple=True, mode=SelectSelectorMode.LIST
+                        )
                     )
                 }
             ),
+            errors=errors,
         )
+
+    def _add_projects(self, projects: list[Project]) -> SubentryFlowResult:
+        """Add every project but the last directly; the flow result creates the last one."""
+        entry = self._get_entry()
+        *others, last = projects
+        for project in others:
+            self.hass.config_entries.async_add_subentry(
+                entry,
+                ConfigSubentry(
+                    data=MappingProxyType(_project_data(project)),
+                    subentry_type=SUBENTRY_PROJECT,
+                    title=project.name,
+                    unique_id=project.id,
+                ),
+            )
+        return self.async_create_entry(title=last.name, data=_project_data(last), unique_id=last.id)
 
     def _queries(self) -> list[dict[str, Any]]:
         return [dict(item) for item in self._get_reconfigure_subentry().data.get(CONF_QUERIES, ())]

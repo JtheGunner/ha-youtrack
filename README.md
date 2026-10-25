@@ -73,7 +73,8 @@ to create issues, comment, update issues and add work items.
 1. **Settings → Devices & services → Add integration → YouTrack**.
 2. Enter the address of your YouTrack (include a context path such as `/youtrack` if your installation
    uses one) and the token. Disable certificate verification only for self-signed certificates.
-3. Open the new entry and choose **Add project** for every project you want in Home Assistant.
+3. Open the new entry and choose **Add project**. Tick every project you want in Home Assistant; all of them
+   are added in one step.
 
 You can change the address or token later with **Reconfigure**. If YouTrack rejects the token, Home Assistant
 asks you for a new one.

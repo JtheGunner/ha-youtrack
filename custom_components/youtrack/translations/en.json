@@ -57,9 +57,9 @@
       "step": {
         "user": {
           "title": "Add project",
-          "description": "Choose the YouTrack project to add. Each project becomes its own device.",
+          "description": "Choose the YouTrack projects to add. Each project becomes its own device.",
           "data": {
-            "project_id": "Project"
+            "project_ids": "Projects"
           }
         },
         "reconfigure": {
@@ -124,6 +124,7 @@
         "reconfigure_successful": "The query sensors were updated."
       },
       "error": {
+        "no_project_selected": "Select at least one project to add.",
         "invalid_query": "YouTrack rejected the query: {error}",
         "cannot_validate": "The query could not be checked: {error}",
         "nothing_selected": "Select at least one query sensor to remove."

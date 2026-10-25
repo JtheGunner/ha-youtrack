@@ -22,7 +22,7 @@ from custom_components.youtrack.exceptions import YouTrackInvalidQueryError
 from custom_components.youtrack.models import Issue
 from custom_components.youtrack.sensor import YouTrackWatchedIssueSensor
 
-from .common import load_json_fixture
+from .common import let_reload_run, load_json_fixture
 from .conftest import TOKEN, URL
 
 WATCH_PREFIX = "watch_"
@@ -200,7 +200,7 @@ async def test_flow_saves_the_watch_search(hass: HomeAssistant, mock_client: Mag
     mock_client.get_issues.side_effect = _answer({SCOPED_WATCH: _issues("DEMO-5")})
 
     result = await _reconfigure_watch(hass, entry, WATCH)
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     assert result["type"] is FlowResultType.ABORT
     assert entry.subentries["sub-demo"].data[CONF_WATCH] == WATCH
@@ -216,7 +216,7 @@ async def test_flow_clears_the_watch_search(hass: HomeAssistant, mock_client: Ma
     assert hass.states.get("sensor.demo_project_demo_5") is not None
 
     await _reconfigure_watch(hass, entry, "")
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     assert entry.subentries["sub-demo"].data[CONF_WATCH] == ""
     assert hass.states.get("sensor.demo_project_demo_5") is None
