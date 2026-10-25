@@ -2,7 +2,7 @@
 
 <img src="custom_components/youtrack/brand/icon@2x.png" alt="YouTrack for Home Assistant" width="96">
 
-# 🎫 YouTrack for Home Assistant
+# YouTrack for Home Assistant
 
 **Bring your YouTrack projects, issues and knowledge base into Home Assistant.**
 
