@@ -1,5 +1,6 @@
 """Tests for setting up and unloading the integration."""
 
+import logging
 from unittest.mock import MagicMock
 
 import pytest
@@ -14,6 +15,7 @@ from custom_components.youtrack.exceptions import (
     YouTrackConnectionError,
     YouTrackPermissionError,
 )
+from custom_components.youtrack.models import Issue
 
 
 async def test_integration_is_discoverable(hass: HomeAssistant) -> None:
@@ -72,3 +74,28 @@ async def test_setup_retries_when_server_unreachable(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_setup_skips_project_removed_during_setup(
+    hass: HomeAssistant,
+    mock_client: MagicMock,
+    mock_project_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A project deleted while the entry is still loading is not set up."""
+    issues: list[Issue] = mock_client.get_issues.return_value
+
+    async def get_issues_then_remove_project(*args: object, **kwargs: object) -> list[Issue]:
+        hass.config_entries.async_remove_subentry(mock_project_entry, "sub-demo")
+        return issues
+
+    mock_client.get_issues.side_effect = get_issues_then_remove_project
+    mock_project_entry.add_to_hass(hass)
+
+    with caplog.at_level(logging.ERROR):
+        await hass.config_entries.async_setup(mock_project_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert mock_project_entry.state is ConfigEntryState.LOADED
+    assert mock_project_entry.runtime_data.coordinators == {}
+    assert "unknown subentry" not in caplog.text

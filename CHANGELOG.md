@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.5] - 2026-10-25
+
+### Fixed
+
+- Removing a project while the integration is still reloading no longer logs "Can't add entities to unknown subentry"
+  errors for the binary sensor, event, sensor and to-do platforms.
+
 ## [1.1.4] - 2026-10-25
 
 ### Fixed
