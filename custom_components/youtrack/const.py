@@ -10,6 +10,7 @@ CONF_VERIFY_SSL = "verify_ssl"
 
 SUBENTRY_PROJECT = "project"
 CONF_PROJECT_ID = "project_id"
+CONF_PROJECT_IDS = "project_ids"
 CONF_PROJECT_KEY = "project_key"
 
 CONF_SCAN_INTERVAL = "scan_interval"

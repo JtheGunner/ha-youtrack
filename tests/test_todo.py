@@ -23,6 +23,7 @@ from custom_components.youtrack.exceptions import YouTrackPermissionError
 from custom_components.youtrack.models import Issue
 from custom_components.youtrack.todo import issue_to_item
 
+from .common import let_reload_run
 from .conftest import URL
 from .test_query_sensors import QUERY, _entry
 
@@ -139,7 +140,7 @@ async def test_query_gets_its_own_list_that_disappears_with_it(
         entry.subentries["sub-demo"],
         data={**entry.subentries["sub-demo"].data, "queries": []},
     )
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     registry = er.async_get(hass)
     assert registry.async_get(QUERY_LIST) is None

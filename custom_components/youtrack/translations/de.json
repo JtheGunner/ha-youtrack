@@ -57,9 +57,9 @@
       "step": {
         "user": {
           "title": "Projekt hinzufügen",
-          "description": "Wähle das YouTrack-Projekt, das du hinzufügen möchtest. Jedes Projekt wird ein eigenes Gerät.",
+          "description": "Wähle die YouTrack-Projekte, die du hinzufügen möchtest. Jedes Projekt wird ein eigenes Gerät.",
           "data": {
-            "project_id": "Projekt"
+            "project_ids": "Projekte"
           }
         },
         "reconfigure": {
@@ -124,6 +124,7 @@
         "reconfigure_successful": "Die Abfrage-Sensoren wurden aktualisiert."
       },
       "error": {
+        "no_project_selected": "Wähle mindestens ein Projekt zum Hinzufügen aus.",
         "invalid_query": "YouTrack hat die Abfrage abgelehnt: {error}",
         "cannot_validate": "Die Abfrage konnte nicht geprüft werden: {error}",
         "nothing_selected": "Wähle mindestens einen Abfrage-Sensor zum Entfernen aus."

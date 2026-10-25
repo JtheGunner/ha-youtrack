@@ -27,6 +27,7 @@ from custom_components.youtrack.exceptions import (
     YouTrackInvalidQueryError,
 )
 
+from .common import let_reload_run
 from .conftest import TOKEN, URL
 
 ENTITY = "sensor.demo_project_my_issues"
@@ -170,7 +171,7 @@ async def test_add_query(hass: HomeAssistant, mock_client: MagicMock) -> None:
         result["flow_id"],
         {CONF_QUERY_NAME: " My issues ", CONF_QUERY_TEXT: "for: me", CONF_QUERY_TOP: 5},
     )
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
@@ -239,7 +240,7 @@ async def test_edit_query(hass: HomeAssistant, mock_client: MagicMock) -> None:
         result["flow_id"],
         {CONF_QUERY_NAME: "My issues", CONF_QUERY_TEXT: "#Resolved", CONF_QUERY_TOP: 3},
     )
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     assert result["reason"] == "reconfigure_successful"
     (stored,) = _stored(entry)
@@ -279,7 +280,7 @@ async def test_remove_query_removes_sensor(hass: HomeAssistant, mock_client: Mag
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {CONF_QUERIES: ["q1"]}
     )
-    await hass.async_block_till_done()
+    await let_reload_run(hass)
 
     assert result["reason"] == "reconfigure_successful"
     assert _stored(entry) == []

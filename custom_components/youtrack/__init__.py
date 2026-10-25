@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+from functools import partial
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.debounce import Debouncer
 
 from . import llm_api
 from .activity import ActivityFeed
@@ -26,6 +29,11 @@ if TYPE_CHECKING:
     from homeassistant.helpers.typing import ConfigType
 
     from .data import YouTrackConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
+
+# Seconds to wait for further project changes before the entry reloads.
+RELOAD_DELAY = 1.0
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -79,7 +87,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
         del entry.runtime_data.knowledge_bases[subentry_id]
 
     llm_api.async_register(hass, entry)
-    entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
+    reload_debouncer = Debouncer(
+        hass,
+        _LOGGER,
+        cooldown=RELOAD_DELAY,
+        immediate=False,
+        function=partial(hass.config_entries.async_schedule_reload, entry.entry_id),
+    )
+    entry.async_on_unload(reload_debouncer.async_shutdown)
+    entry.async_on_unload(
+        entry.add_update_listener(partial(_async_reload_on_update, reload_debouncer))
+    )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -101,6 +119,8 @@ async def async_remove_config_entry_device(
     return not (device_entry.identifiers & active)
 
 
-async def _async_reload_on_update(hass: HomeAssistant, entry: YouTrackConfigEntry) -> None:
-    """Reload the entry when projects are added or removed."""
-    await hass.config_entries.async_reload(entry.entry_id)
+async def _async_reload_on_update(
+    debouncer: Debouncer[None], hass: HomeAssistant, entry: YouTrackConfigEntry
+) -> None:
+    """Reload the entry once after a burst of project changes."""
+    await debouncer.async_call()
