@@ -73,6 +73,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: YouTrackConfigEntry) -> 
         await knowledge_base.async_refresh()
         entry.runtime_data.knowledge_bases[subentry.subentry_id] = knowledge_base
 
+    # A project removed while the loop above was refreshing has no subentry left to add entities to.
+    for subentry_id in set(entry.runtime_data.coordinators) - set(entry.subentries):
+        del entry.runtime_data.coordinators[subentry_id]
+        del entry.runtime_data.knowledge_bases[subentry_id]
+
     llm_api.async_register(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_update))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
