@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.6] - 2026-10-25
+
+### Added
+
+- **Add project** now lets you tick several projects and adds all of them in one step. An empty selection shows a
+  hint instead of closing silently.
+
+### Fixed
+
+- Adding several projects in quick succession reloads the integration once instead of once per project. Before, a
+  project added while the previous reload was still running was not set up.
+
 ## [1.1.5] - 2026-10-25
 
 ### Fixed
