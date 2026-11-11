@@ -36,3 +36,33 @@ def test_readme_header_uses_an_existing_brand_image() -> None:
 
     assert match is not None
     assert (REPO_ROOT / match.group(1)).is_file()
+
+
+@pytest.mark.parametrize("prefix", ["", "dark_"])
+@pytest.mark.parametrize("name", ["icon", "logo"])
+def test_one_x_image_shows_the_same_area_as_the_two_x_image(prefix: str, name: str) -> None:
+    """HACS uses the 1x files, so they must not be a cropped part of the ``@2x`` artwork."""
+    with (
+        Image.open(BRAND / f"{prefix}{name}.png").convert("RGBA") as one_x,
+        Image.open(BRAND / f"{prefix}{name}@2x.png").convert("RGBA") as two_x,
+    ):
+        one_x_box = one_x.getchannel("A").getbbox()
+        two_x_box = two_x.getchannel("A").getbbox()
+
+    assert one_x_box is not None
+    assert two_x_box is not None
+    assert all(
+        abs(one_x_edge * 2 - two_x_edge) <= 4
+        for one_x_edge, two_x_edge in zip(one_x_box, two_x_box, strict=True)
+    )
+
+
+@pytest.mark.parametrize("prefix", ["", "dark_"])
+@pytest.mark.parametrize("scale", [1, 2])
+def test_logo_shows_the_wordmark_and_is_not_cropped(prefix: str, scale: int) -> None:
+    """A cropped export loses the wordmark, so the right part of the logo must contain pixels."""
+    suffix = "@2x" if scale == 2 else ""
+
+    with Image.open(BRAND / f"{prefix}logo{suffix}.png").convert("RGBA") as logo:
+        right_half = logo.crop((logo.width // 2, 0, logo.width, logo.height))
+        assert right_half.getchannel("A").getbbox() is not None
