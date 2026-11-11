@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.8] - 2026-11-11
+
+### Fixed
+
+- The logo is no longer cropped in HACS. The 1x brand images were exported as only a part of the artwork, which showed
+  a shifted, cut-off logo in the HACS list and update dialog. `scripts/build-brand` now exports them completely.
+
 ## [1.1.7] - 2026-11-11
 
 ### Changed
