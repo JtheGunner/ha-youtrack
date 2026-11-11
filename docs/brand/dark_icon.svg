@@ -15,11 +15,15 @@
     <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#8e8e98"/>
     </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34203f"/><stop offset="1" stop-color="#150d1e"/>
+    </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
       <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#2a1030" flood-opacity="0.15"/>
     </filter>
   </defs>
-  <g filter="url(#shadow)">
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <g transform="translate(256 256) scale(1.08) translate(-256.5 -238)"><g filter="url(#shadow)">
     <path d="M152 112 L282 56 C326 40 372 78 366 128 L350 330 L158 436 L66 366 L104 258 L56 214 Z" fill="url(#pink)" stroke="url(#rim)" stroke-width="3" stroke-linejoin="round"/>
     <path d="M386 186 L425 176 L457 317 L386 334 Z" fill="url(#pink-light)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
     <rect x="128" y="128" width="256" height="256" fill="#1b1b1f" stroke="#ffffff" stroke-width="4"/>
@@ -29,5 +33,5 @@
       <text x="248" y="316">YT</text>
     </g>
     <rect x="166" y="344" width="92" height="11" fill="url(#metal)"/>
-  </g>
+  </g></g>
 </svg>

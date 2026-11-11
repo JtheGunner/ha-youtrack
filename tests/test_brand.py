@@ -36,3 +36,28 @@ def test_readme_header_uses_an_existing_brand_image() -> None:
 
     assert match is not None
     assert (REPO_ROOT / match.group(1)).is_file()
+
+
+@pytest.mark.parametrize("prefix", ["", "dark_"])
+@pytest.mark.parametrize("scale", [1, 2])
+def test_icon_fills_the_square_edge_to_edge(prefix: str, scale: int) -> None:
+    """HACS crops the icon into a fixed frame, so the tile must touch all four edges."""
+    suffix = "@2x" if scale == 2 else ""
+
+    with Image.open(BRAND / f"{prefix}icon{suffix}.png").convert("RGBA") as icon:
+        alpha = icon.getchannel("A")
+        middle = icon.width // 2
+        last = icon.width - 1
+        edge_midpoints = [(middle, 0), (middle, last), (0, middle), (last, middle)]
+        assert all(alpha.getpixel(point) == 255 for point in edge_midpoints)
+
+
+@pytest.mark.parametrize("prefix", ["", "dark_"])
+@pytest.mark.parametrize("scale", [1, 2])
+def test_logo_shows_the_wordmark_and_is_not_cropped(prefix: str, scale: int) -> None:
+    """A cropped export loses the wordmark, so the right part of the logo must contain pixels."""
+    suffix = "@2x" if scale == 2 else ""
+
+    with Image.open(BRAND / f"{prefix}logo{suffix}.png").convert("RGBA") as logo:
+        right_half = logo.crop((logo.width // 2, 0, logo.width, logo.height))
+        assert right_half.getchannel("A").getbbox() is not None

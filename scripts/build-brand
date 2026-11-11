@@ -14,13 +14,25 @@ if [[ ! -x "$CHROME" ]]; then
   exit 1
 fi
 
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
+
 # render <svg name> <output name> <width> <height>
+# Headless Chrome enforces a minimum window width, so the SVG is placed at its exact size
+# in the top-left corner of a page and the screenshot is cut to that size.
 render() {
+  local page="$WORK_DIR/$2.html"
+  cat > "$page" <<HTML
+<!doctype html>
+<html style="margin:0;background:transparent"><body style="margin:0;background:transparent">
+<img src="file://$PWD/$SOURCE_DIR/$1.svg" width="$3" height="$4" style="display:block">
+</body></html>
+HTML
   "$CHROME" --headless --disable-gpu --hide-scrollbars \
     --default-background-color=00000000 \
     --window-size="$3,$4" \
     --screenshot="$TARGET_DIR/$2.png" \
-    "file://$PWD/$SOURCE_DIR/$1.svg" > /dev/null 2>&1
+    "file://$page" > /dev/null 2>&1
   echo "wrote $TARGET_DIR/$2.png (${3}x${4})"
 }
 
