@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Export the brand PNGs in custom_components/youtrack/brand from the SVG sources in docs/brand.
+# Needs Google Chrome (headless); override its location with CHROME=/path/to/chrome.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+SOURCE_DIR="docs/brand"
+TARGET_DIR="custom_components/youtrack/brand"
+
+if [[ ! -x "$CHROME" ]]; then
+  echo "Chrome not found at '$CHROME'. Set CHROME to a Chrome/Chromium binary." >&2
+  exit 1
+fi
+
+# render <svg name> <output name> <width> <height>
+render() {
+  "$CHROME" --headless --disable-gpu --hide-scrollbars \
+    --default-background-color=00000000 \
+    --window-size="$3,$4" \
+    --screenshot="$TARGET_DIR/$2.png" \
+    "file://$PWD/$SOURCE_DIR/$1.svg" > /dev/null 2>&1
+  echo "wrote $TARGET_DIR/$2.png (${3}x${4})"
+}
+
+for prefix in "" "dark_"; do
+  render "${prefix}icon" "${prefix}icon" 256 256
+  render "${prefix}icon" "${prefix}icon@2x" 512 512
+  render "${prefix}logo" "${prefix}logo" 392 128
+  render "${prefix}logo" "${prefix}logo@2x" 784 256
+done
