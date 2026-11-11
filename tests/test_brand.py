@@ -39,17 +39,22 @@ def test_readme_header_uses_an_existing_brand_image() -> None:
 
 
 @pytest.mark.parametrize("prefix", ["", "dark_"])
-@pytest.mark.parametrize("scale", [1, 2])
-def test_icon_fills_the_square_edge_to_edge(prefix: str, scale: int) -> None:
-    """HACS crops the icon into a fixed frame, so the tile must touch all four edges."""
-    suffix = "@2x" if scale == 2 else ""
+@pytest.mark.parametrize("name", ["icon", "logo"])
+def test_one_x_image_shows_the_same_area_as_the_two_x_image(prefix: str, name: str) -> None:
+    """HACS uses the 1x files, so they must not be a cropped part of the ``@2x`` artwork."""
+    with (
+        Image.open(BRAND / f"{prefix}{name}.png").convert("RGBA") as one_x,
+        Image.open(BRAND / f"{prefix}{name}@2x.png").convert("RGBA") as two_x,
+    ):
+        one_x_box = one_x.getchannel("A").getbbox()
+        two_x_box = two_x.getchannel("A").getbbox()
 
-    with Image.open(BRAND / f"{prefix}icon{suffix}.png").convert("RGBA") as icon:
-        alpha = icon.getchannel("A")
-        middle = icon.width // 2
-        last = icon.width - 1
-        edge_midpoints = [(middle, 0), (middle, last), (0, middle), (last, middle)]
-        assert all(alpha.getpixel(point) == 255 for point in edge_midpoints)
+    assert one_x_box is not None
+    assert two_x_box is not None
+    assert all(
+        abs(one_x_edge * 2 - two_x_edge) <= 4
+        for one_x_edge, two_x_edge in zip(one_x_box, two_x_box, strict=True)
+    )
 
 
 @pytest.mark.parametrize("prefix", ["", "dark_"])
