@@ -19,6 +19,8 @@ from custom_components.youtrack.const import (
     CONF_URL,
     CONF_VERIFY_SSL,
     DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
 )
 from custom_components.youtrack.exceptions import (
     YouTrackAuthError,
@@ -307,3 +309,31 @@ async def test_options_flow_shows_current_interval(
     result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
 
     assert _interval_default(result) == 30
+
+
+@pytest.mark.parametrize("minutes", [MIN_SCAN_INTERVAL - 1, MAX_SCAN_INTERVAL + 1])
+async def test_options_flow_rejects_interval_out_of_range(
+    hass: HomeAssistant, mock_client: MagicMock, mock_config_entry: MockConfigEntry, minutes: int
+) -> None:
+    """An interval outside the allowed range is reported by the integration."""
+    mock_config_entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_SCAN_INTERVAL: minutes,
+            CONF_RESOLVED_STATE: "Done",
+            CONF_REOPENED_STATE: "Open",
+            CONF_TODO_CREATE: False,
+            CONF_LLM_CREATE: False,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_SCAN_INTERVAL: "scan_interval_out_of_range"}
+    assert result["description_placeholders"] == {
+        "min": str(MIN_SCAN_INTERVAL),
+        "max": str(MAX_SCAN_INTERVAL),
+    }
+    assert CONF_SCAN_INTERVAL not in mock_config_entry.options

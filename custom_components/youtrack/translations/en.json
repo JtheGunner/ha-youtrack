@@ -80,7 +80,7 @@
             "top": "Issues in attributes"
           },
           "data_description": {
-            "top": "How many matching issues are listed in the sensor attributes."
+            "top": "How many matching issues are listed in the sensor attributes, from {min} to {max}. 0 lists all of them (at most {max})."
           }
         },
         "edit_query": {
@@ -98,7 +98,7 @@
             "top": "Issues in attributes"
           },
           "data_description": {
-            "top": "How many matching issues are listed in the sensor attributes."
+            "top": "How many matching issues are listed in the sensor attributes, from {min} to {max}. 0 lists all of them (at most {max})."
           }
         },
         "remove_query": {
@@ -127,7 +127,8 @@
         "no_project_selected": "Select at least one project to add.",
         "invalid_query": "YouTrack rejected the query: {error}",
         "cannot_validate": "The query could not be checked: {error}",
-        "nothing_selected": "Select at least one query sensor to remove."
+        "nothing_selected": "Select at least one query sensor to remove.",
+        "top_out_of_range": "Enter a number from {min} to {max}. 0 lists all matching issues."
       }
     }
   },
@@ -150,6 +151,9 @@
           "llm_create": "Assist conversation agents that use the YouTrack API can search issues and articles. Turn this on to also let them create issues."
         }
       }
+    },
+    "error": {
+      "scan_interval_out_of_range": "Enter a number of minutes from {min} to {max}."
     }
   },
   "entity": {

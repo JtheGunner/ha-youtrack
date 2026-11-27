@@ -24,8 +24,9 @@ CONF_QUERY_NAME = "name"
 CONF_QUERY_TEXT = "query"
 CONF_QUERY_TOP = "top"
 DEFAULT_QUERY_TOP = 10
-MIN_QUERY_TOP = 1
-MAX_QUERY_TOP = 25
+QUERY_TOP_ALL = 0  # a limit of zero lists every match, up to MAX_QUERY_TOP
+MIN_QUERY_TOP = QUERY_TOP_ALL
+MAX_QUERY_TOP = 500
 
 EVENT_PREFIX = f"{DOMAIN}_issue_"
 

@@ -1,5 +1,6 @@
 """Tests for the custom query sensors and the flow that manages them."""
 
+import dataclasses
 import logging
 from unittest.mock import MagicMock
 
@@ -20,6 +21,8 @@ from custom_components.youtrack.const import (
     CONF_QUERY_TEXT,
     CONF_QUERY_TOP,
     DOMAIN,
+    MAX_QUERY_TOP,
+    MIN_QUERY_TOP,
     SUBENTRY_PROJECT,
 )
 from custom_components.youtrack.exceptions import (
@@ -197,7 +200,7 @@ async def test_add_query_rejected_by_youtrack(hass: HomeAssistant, mock_client: 
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {CONF_QUERY_TEXT: "invalid_query"}
-    assert result["description_placeholders"] == {"error": "Unknown field: foo"}
+    assert (result["description_placeholders"] or {})["error"] == "Unknown field: foo"
     assert _stored(entry) == []
 
 
@@ -325,3 +328,124 @@ def test_is_balanced() -> None:
     assert not is_balanced("a) or (b")
     assert not is_balanced("(a")
     assert not is_balanced("{a)")
+
+
+@pytest.mark.parametrize("top", [MIN_QUERY_TOP - 1, MAX_QUERY_TOP + 1])
+async def test_add_query_rejects_top_out_of_range(
+    hass: HomeAssistant, mock_client: MagicMock, top: int
+) -> None:
+    """A limit outside the allowed range is reported by the integration, not stored."""
+    entry = _entry([])
+    await _setup(hass, entry)
+    result = await _choose(hass, await _reconfigure(hass, entry), "add_query")
+    mock_client.count_issues.reset_mock()
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {CONF_QUERY_NAME: "Q", CONF_QUERY_TEXT: "for: me", CONF_QUERY_TOP: top},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_QUERY_TOP: "top_out_of_range"}
+    placeholders = result["description_placeholders"] or {}
+    assert placeholders["min"] == str(MIN_QUERY_TOP)
+    assert placeholders["max"] == str(MAX_QUERY_TOP)
+    assert _stored(entry) == []
+    mock_client.count_issues.assert_not_awaited()
+
+
+@pytest.mark.parametrize("top", [MIN_QUERY_TOP, MAX_QUERY_TOP])
+async def test_add_query_accepts_the_range_limits(
+    hass: HomeAssistant, mock_client: MagicMock, top: int
+) -> None:
+    """Both ends of the range are valid; zero means all results."""
+    entry = _entry([])
+    await _setup(hass, entry)
+    result = await _choose(hass, await _reconfigure(hass, entry), "add_query")
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {CONF_QUERY_NAME: "Q", CONF_QUERY_TEXT: "for: me", CONF_QUERY_TOP: top},
+    )
+    await let_reload_run(hass)
+
+    assert result["reason"] == "reconfigure_successful"
+    (stored,) = _stored(entry)
+    assert stored[CONF_QUERY_TOP] == top
+
+
+async def test_edit_query_rejects_top_out_of_range(
+    hass: HomeAssistant, mock_client: MagicMock
+) -> None:
+    """Editing with an out-of-range limit keeps the old query."""
+    entry = _entry([QUERY])
+    await _setup(hass, entry)
+    result = await _choose(hass, await _reconfigure(hass, entry), "edit_query")
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {CONF_QUERY_ID: "q1"}
+    )
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {CONF_QUERY_NAME: "My issues", CONF_QUERY_TEXT: "#Resolved", CONF_QUERY_TOP: 10_000},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "edit_query_details"
+    assert result["errors"] == {CONF_QUERY_TOP: "top_out_of_range"}
+    assert _stored(entry) == [QUERY]
+
+
+def _serve_pages(mock_client: MagicMock, total: int) -> None:
+    """Make ``get_issues`` serve ``total`` issues page by page, like YouTrack does."""
+    template = mock_client.get_issues.return_value[0]
+    everything = [dataclasses.replace(template, id=f"DEMO-{n}") for n in range(1, total + 1)]
+
+    async def fake_get_issues(query: str, *, top: int = 100, skip: int = 0):  # type: ignore[no-untyped-def]
+        return everything[skip : skip + top]
+
+    mock_client.get_issues.side_effect = fake_get_issues
+    mock_client.count_issues.side_effect = None
+    mock_client.count_issues.return_value = total
+
+
+async def test_query_with_no_limit_lists_every_issue(
+    hass: HomeAssistant, mock_client: MagicMock
+) -> None:
+    """A limit of zero pages through all results; the state is the real count."""
+    _serve_pages(mock_client, 230)
+    await _setup(hass, _entry([{**QUERY, CONF_QUERY_TOP: 0}]))
+
+    state = hass.states.get(ENTITY)
+    assert state is not None
+    assert state.state == "230"
+    assert len(state.attributes["issues"]) == 230
+    assert state.attributes["issues"][-1]["id"] == "DEMO-230"
+
+
+async def test_query_with_no_limit_stops_at_the_ceiling(
+    hass: HomeAssistant, mock_client: MagicMock, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Beyond the ceiling the attributes are cut, the count stays exact, one warning is logged."""
+    _serve_pages(mock_client, MAX_QUERY_TOP + 120)
+    entry = _entry([{**QUERY, CONF_QUERY_TOP: 0}])
+    with caplog.at_level(logging.WARNING):
+        await _setup(hass, entry)
+
+    state = hass.states.get(ENTITY)
+    assert state is not None
+    assert state.state == str(MAX_QUERY_TOP + 120)
+    assert len(state.attributes["issues"]) == MAX_QUERY_TOP
+    assert sum("only the first" in record.message for record in caplog.records) == 1
+
+
+async def test_query_with_a_limit_still_fetches_one_page(
+    hass: HomeAssistant, mock_client: MagicMock
+) -> None:
+    """A positive limit is passed to YouTrack as before."""
+    _serve_pages(mock_client, 50)
+    await _setup(hass, _entry([{**QUERY, CONF_QUERY_TOP: 20}]))
+
+    state = hass.states.get(ENTITY)
+    assert state is not None
+    assert len(state.attributes["issues"]) == 20

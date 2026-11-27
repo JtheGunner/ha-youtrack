@@ -346,6 +346,12 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
             return "cannot_validate", str(err)
         return None, ""
 
+    async def _validate_new_query(self, user_input: dict[str, Any]) -> tuple[str | None, str]:
+        """Check the issue limit locally, then ask YouTrack about the query text."""
+        if not MIN_QUERY_TOP <= user_input[CONF_QUERY_TOP] <= MAX_QUERY_TOP:
+            return "top_out_of_range", ""
+        return await self._validate_query(user_input[CONF_QUERY_TEXT])
+
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
@@ -363,14 +369,14 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         """Add a named query."""
         errors: dict[str, str] = {}
-        placeholders = {"error": ""}
+        placeholders = {"error": "", **_TOP_RANGE_PLACEHOLDERS}
         if user_input is not None:
-            error, detail = await self._validate_query(user_input[CONF_QUERY_TEXT])
+            error, detail = await self._validate_new_query(user_input)
             if error is None:
                 queries = self._queries()
                 queries.append(self._query_data(uuid4().hex[:8], user_input))
                 return self._save_queries(queries)
-            errors[CONF_QUERY_TEXT] = error
+            errors[_query_error_field(error)] = error
             placeholders["error"] = detail
         return self.async_show_form(
             step_id="add_query",
@@ -402,13 +408,13 @@ class ProjectSubentryFlowHandler(ConfigSubentryFlow):
         # The picker only offers existing queries, so the id is always found.
         index = next(i for i, item in enumerate(queries) if item[CONF_QUERY_ID] == self._editing)
         errors: dict[str, str] = {}
-        placeholders = {"error": ""}
+        placeholders = {"error": "", **_TOP_RANGE_PLACEHOLDERS}
         if user_input is not None:
-            error, detail = await self._validate_query(user_input[CONF_QUERY_TEXT])
+            error, detail = await self._validate_new_query(user_input)
             if error is None:
                 queries[index] = self._query_data(self._editing, user_input)
                 return self._save_queries(queries)
-            errors[CONF_QUERY_TEXT] = error
+            errors[_query_error_field(error)] = error
             placeholders["error"] = detail
         return self.async_show_form(
             step_id="edit_query_details",
@@ -496,19 +502,27 @@ class YouTrackOptionsFlow(OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Set the polling interval and what the to-do lists may change."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(
-                data={
-                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
-                    CONF_RESOLVED_STATE: user_input[CONF_RESOLVED_STATE].strip(),
-                    CONF_REOPENED_STATE: user_input[CONF_REOPENED_STATE].strip(),
-                    CONF_TODO_CREATE: user_input[CONF_TODO_CREATE],
-                    CONF_LLM_CREATE: user_input[CONF_LLM_CREATE],
-                }
-            )
-        options = self.config_entry.options
+            if MIN_SCAN_INTERVAL <= user_input[CONF_SCAN_INTERVAL] <= MAX_SCAN_INTERVAL:
+                return self.async_create_entry(
+                    data={
+                        CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
+                        CONF_RESOLVED_STATE: user_input[CONF_RESOLVED_STATE].strip(),
+                        CONF_REOPENED_STATE: user_input[CONF_REOPENED_STATE].strip(),
+                        CONF_TODO_CREATE: user_input[CONF_TODO_CREATE],
+                        CONF_LLM_CREATE: user_input[CONF_LLM_CREATE],
+                    }
+                )
+            errors[CONF_SCAN_INTERVAL] = "scan_interval_out_of_range"
+        options = user_input or self.config_entry.options
         return self.async_show_form(
             step_id="init",
+            errors=errors,
+            description_placeholders={
+                "min": str(MIN_SCAN_INTERVAL),
+                "max": str(MAX_SCAN_INTERVAL),
+            },
             data_schema=probatio.Schema(
                 {
                     probatio.Required(
@@ -516,8 +530,6 @@ class YouTrackOptionsFlow(OptionsFlow):
                         default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): NumberSelector(
                         NumberSelectorConfig(
-                            min=MIN_SCAN_INTERVAL,
-                            max=MAX_SCAN_INTERVAL,
                             step=1,
                             unit_of_measurement="min",
                             mode=NumberSelectorMode.BOX,
@@ -547,9 +559,14 @@ QUERY_SCHEMA = probatio.Schema(
         probatio.Required(CONF_QUERY_NAME): TextSelector(),
         probatio.Required(CONF_QUERY_TEXT): TextSelector(TextSelectorConfig(multiline=True)),
         probatio.Required(CONF_QUERY_TOP, default=DEFAULT_QUERY_TOP): NumberSelector(
-            NumberSelectorConfig(
-                min=MIN_QUERY_TOP, max=MAX_QUERY_TOP, step=1, mode=NumberSelectorMode.BOX
-            )
+            NumberSelectorConfig(step=1, mode=NumberSelectorMode.BOX)
         ),
     }
 )
+
+_TOP_RANGE_PLACEHOLDERS = {"min": str(MIN_QUERY_TOP), "max": str(MAX_QUERY_TOP)}
+
+
+def _query_error_field(error: str) -> str:
+    """Return the form field an error of the query steps belongs to."""
+    return CONF_QUERY_TOP if error == "top_out_of_range" else CONF_QUERY_TEXT
