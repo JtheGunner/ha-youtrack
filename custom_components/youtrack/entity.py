@@ -72,3 +72,8 @@ class YouTrackKnowledgeBaseEntity(CoordinatorEntity[KnowledgeBaseCoordinator]):
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.subentry_id}_{key}"
         self._attr_device_info = project_device_info(coordinator)
+
+    @property
+    def available(self) -> bool:
+        """The entity is unavailable until the first read of the knowledge base has succeeded."""
+        return super().available and self.coordinator.data is not None

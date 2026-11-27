@@ -122,7 +122,8 @@ are not created.
 | 🕑 | Last updated article | When an article last changed. Attributes: `id`, `title`, `author`, `url`, `recent` (latest five) | as above |
 
 Knowledge base entities refresh at a sixth of the issue polling rate and stay unavailable, without affecting
-the issue entities, when the token may not read articles.
+the issue entities, when the token may not read articles. After a start or reload they fill a few seconds later
+than the issue entities, because the articles are read in the background.
 
 ### ✍️ Actions
 
