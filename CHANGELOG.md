@@ -6,13 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-11-27
+
 ### Changed
 
 - Starting and reloading the integration is much faster with several projects. The projects load at the same time
   instead of one after the other, the knowledge base is read in the background (its entities are unavailable until
   that first read has finished), and a reload brings the open issues up to date with a small request instead of
   reading all of them again.
-
 - The German translation says "Issue" instead of "Ticket", in entity names, setup dialogs, services and errors. Entity IDs of existing installations do not change.
 
 ## [1.1.8] - 2026-11-11
