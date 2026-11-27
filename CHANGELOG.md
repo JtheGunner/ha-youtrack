@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The German translation says "Issue" instead of "Ticket", in entity names, setup dialogs, services and errors. Entity IDs of existing installations do not change.
+
 ## [1.1.8] - 2026-11-11
 
 ### Fixed
