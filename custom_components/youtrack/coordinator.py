@@ -32,7 +32,6 @@ from .exceptions import (
     YouTrackPermissionError,
     YouTrackRateLimitError,
 )
-from .issue_cache import IssueCache
 from .queries import COUNT_QUERIES, CountQuery, CustomQuery, watched_text
 
 if TYPE_CHECKING:
@@ -42,6 +41,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from .data import YouTrackConfigEntry
+    from .issue_cache import IssueCache
     from .models import Activity, Issue
 
 _LOGGER = logging.getLogger(__name__)
@@ -87,9 +87,13 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
     config_entry: YouTrackConfigEntry
 
     def __init__(
-        self, hass: HomeAssistant, entry: YouTrackConfigEntry, subentry: ConfigSubentry
+        self,
+        hass: HomeAssistant,
+        entry: YouTrackConfigEntry,
+        subentry: ConfigSubentry,
+        cache: IssueCache,
     ) -> None:
-        """Create the coordinator for ``subentry``."""
+        """Create the coordinator for ``subentry``, which reads its issues through ``cache``."""
         self.project_id: str = subentry.data[CONF_PROJECT_ID]
         self.project_key: str = subentry.data[CONF_PROJECT_KEY]
         self.project_name: str = subentry.title
@@ -100,7 +104,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self._invalid_queries: set[str] = set()
         self._feed = entry.runtime_data.feed
         self._event_sequence: int | None = None
-        self._cache = IssueCache(self._client, self.project_key, dt_util.get_default_time_zone())
+        self._cache = cache
         self.custom_queries: tuple[CustomQuery, ...] = tuple(
             CustomQuery.from_data(item) for item in subentry.data.get(CONF_QUERIES, ())
         )

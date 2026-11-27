@@ -51,9 +51,22 @@ class IssueCache:
         self._deltas_since_full = 0
 
     @property
+    def project_key(self) -> str:
+        """Return the key of the project the cache belongs to."""
+        return self._project
+
+    @property
     def issues(self) -> Mapping[str, Issue]:
         """Return the cached unresolved issues by id."""
         return self._issues
+
+    def use_client(self, client: YouTrackClient) -> None:
+        """Send the next requests through ``client``, for instance after the token changed."""
+        self._client = client
+
+    def is_stale(self, now: datetime, max_age: timedelta) -> bool:
+        """Say whether the cache has no usable cursor or was last refreshed too long ago."""
+        return self._cursor is None or now - self._cursor > max_age
 
     async def refresh(self, now: datetime) -> None:
         """Bring the cache up to date; ``now`` is the start of the current poll."""

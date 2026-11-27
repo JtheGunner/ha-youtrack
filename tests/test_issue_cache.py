@@ -212,3 +212,30 @@ async def test_empty_project_is_reloaded_until_it_has_issues() -> None:
 
     assert list(cache.issues) == ["DEMO-1"]
     assert server.client.count_issues.await_count == 1
+
+
+async def test_stale_without_a_cursor_or_after_the_maximum_age() -> None:
+    """A cache is stale until it has been refreshed, and again once the last refresh is old."""
+    server = FakeYouTrack([make_issue("DEMO-1", T0)])
+    cache = cache_for(server)
+    limit = timedelta(hours=1)
+    assert cache.is_stale(T0, limit)
+
+    await cache.refresh(T0)
+
+    assert not cache.is_stale(T0 + timedelta(minutes=30), limit)
+    assert cache.is_stale(T0 + limit + timedelta(minutes=10), limit)
+
+
+async def test_requests_go_through_the_client_it_was_given_last() -> None:
+    """After the token changed, a kept cache reads with the new client."""
+    server = FakeYouTrack([make_issue("DEMO-1", T0)])
+    cache = cache_for(server)
+    await cache.refresh(T0)
+    newer = FakeYouTrack([make_issue("DEMO-1", T0), make_issue("DEMO-2", T0)])
+
+    cache.use_client(newer.client)
+    await cache.refresh(T0 + timedelta(minutes=5))
+
+    assert set(cache.issues) == {"DEMO-1", "DEMO-2"}
+    assert len(server.queries) == 1
