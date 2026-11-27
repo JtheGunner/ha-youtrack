@@ -68,19 +68,19 @@
             "add_query": "Abfrage-Sensor hinzufügen",
             "edit_query": "Abfrage-Sensor bearbeiten",
             "remove_query": "Abfrage-Sensoren entfernen",
-            "watch_issues": "Bestimmte Tickets beobachten"
+            "watch_issues": "Bestimmte Issues beobachten"
           }
         },
         "add_query": {
           "title": "Abfrage-Sensor hinzufügen",
-          "description": "Der Sensor zeigt, wie viele Tickets dieses Projekts zur Abfrage passen. Die Abfrage wird automatisch auf dieses Projekt beschränkt. Verwende die YouTrack-Suchsyntax, zum Beispiel `#Unresolved for: me`.",
+          "description": "Der Sensor zeigt, wie viele Issues dieses Projekts zur Abfrage passen. Die Abfrage wird automatisch auf dieses Projekt beschränkt. Verwende die YouTrack-Suchsyntax, zum Beispiel `#Unresolved for: me`.",
           "data": {
             "name": "Name",
             "query": "Suchanfrage",
-            "top": "Tickets in den Attributen"
+            "top": "Issues in den Attributen"
           },
           "data_description": {
-            "top": "Wie viele passende Tickets in den Sensor-Attributen aufgelistet werden."
+            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden."
           }
         },
         "edit_query": {
@@ -95,10 +95,10 @@
           "data": {
             "name": "Name",
             "query": "Suchanfrage",
-            "top": "Tickets in den Attributen"
+            "top": "Issues in den Attributen"
           },
           "data_description": {
-            "top": "Wie viele passende Tickets in den Sensor-Attributen aufgelistet werden."
+            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden."
           }
         },
         "remove_query": {
@@ -109,8 +109,8 @@
           "description": "Hake die Abfrage-Sensoren an, die entfernt werden sollen, und bestätige."
         },
         "watch_issues": {
-          "title": "Tickets beobachten",
-          "description": "Jedes ungelöste Ticket, das zu dieser Suche passt, bekommt einen eigenen Sensor (höchstens {max}). Nutze ein Tag oder eine Liste von Ticket-IDs, zum Beispiel `tag: watch-me` oder `issue id: DEMO-1, DEMO-2`. Die Suche ist auf dieses Projekt beschränkt. Sensoren gelöster oder nicht mehr passender Tickets werden entfernt. Leer lassen, um die Funktion auszuschalten.",
+          "title": "Issues beobachten",
+          "description": "Jedes ungelöste Issue, das zu dieser Suche passt, bekommt einen eigenen Sensor (höchstens {max}). Nutze ein Tag oder eine Liste von Issue-IDs, zum Beispiel `tag: watch-me` oder `issue id: DEMO-1, DEMO-2`. Die Suche ist auf dieses Projekt beschränkt. Sensoren gelöster oder nicht mehr passender Issues werden entfernt. Leer lassen, um die Funktion auszuschalten.",
           "data": {
             "watch": "Suche"
           }
@@ -140,14 +140,14 @@
           "scan_interval": "Aktualisierungsintervall (Minuten)",
           "resolved_state": "Status für abgehakte Einträge",
           "reopened_state": "Status für wieder geöffnete Einträge",
-          "todo_create": "Neue To-do-Einträge als Tickets anlegen",
-          "llm_create": "Sprachassistenten dürfen Tickets anlegen"
+          "todo_create": "Neue To-do-Einträge als Issues anlegen",
+          "llm_create": "Sprachassistenten dürfen Issues anlegen"
         },
         "data_description": {
-          "resolved_state": "Abhaken setzt das Ticket auf diesen Status.",
-          "reopened_state": "Das Abhaken zurücknehmen setzt das Ticket auf diesen Status.",
-          "todo_create": "Neue Einträge der Liste offener Tickets werden als Tickets im Projekt angelegt.",
-          "llm_create": "Assist-Konversationsagenten, die die YouTrack-API nutzen, können Tickets und Artikel suchen. Aktiviere dies, damit sie auch Tickets anlegen dürfen."
+          "resolved_state": "Abhaken setzt das Issue auf diesen Status.",
+          "reopened_state": "Das Abhaken zurücknehmen setzt das Issue auf diesen Status.",
+          "todo_create": "Neue Einträge der Liste offener Issues werden als Issues im Projekt angelegt.",
+          "llm_create": "Assist-Konversationsagenten, die die YouTrack-API nutzen, können Issues und Artikel suchen. Aktiviere dies, damit sie auch Issues anlegen dürfen."
         }
       }
     }
@@ -155,19 +155,19 @@
   "entity": {
     "sensor": {
       "issues_total": {
-        "name": "Tickets"
+        "name": "Issues"
       },
       "issues_open": {
-        "name": "Offene Tickets"
+        "name": "Offene Issues"
       },
       "issues_resolved": {
-        "name": "Gelöste Tickets"
+        "name": "Gelöste Issues"
       },
       "issues_unassigned": {
-        "name": "Nicht zugewiesene Tickets"
+        "name": "Nicht zugewiesene Issues"
       },
       "issues_overdue": {
-        "name": "Überfällige Tickets"
+        "name": "Überfällige Issues"
       },
       "issues_created_7d": {
         "name": "In den letzten 7 Tagen erstellt"
@@ -176,7 +176,7 @@
         "name": "In den letzten 7 Tagen gelöst"
       },
       "issues_critical_open": {
-        "name": "Kritische offene Tickets"
+        "name": "Kritische offene Issues"
       },
       "articles": {
         "name": "Artikel"
@@ -187,15 +187,15 @@
     },
     "binary_sensor": {
       "has_overdue": {
-        "name": "Hat überfällige Tickets"
+        "name": "Hat überfällige Issues"
       },
       "has_critical_open": {
-        "name": "Hat kritische offene Tickets"
+        "name": "Hat kritische offene Issues"
       }
     },
     "event": {
       "issue_activity": {
-        "name": "Ticket-Aktivität",
+        "name": "Issue-Aktivität",
         "state_attributes": {
           "event_type": {
             "state": {
@@ -211,7 +211,7 @@
     },
     "todo": {
       "open_issues": {
-        "name": "Offene Tickets"
+        "name": "Offene Issues"
       }
     },
     "calendar": {
@@ -222,20 +222,20 @@
   },
   "services": {
     "create_issue": {
-      "name": "Ticket erstellen",
-      "description": "Erstellt ein Ticket im gewählten Projekt und gibt ID und Link zurück.",
+      "name": "Issue erstellen",
+      "description": "Erstellt ein Issue im gewählten Projekt und gibt ID und Link zurück.",
       "fields": {
         "summary": {
           "name": "Titel",
-          "description": "Der Titel des Tickets."
+          "description": "Der Titel des Issues."
         },
         "description": {
           "name": "Beschreibung",
-          "description": "Der Text des Tickets."
+          "description": "Der Text des Issues."
         },
         "type": {
           "name": "Typ",
-          "description": "Der Tickettyp, zum Beispiel Task. Er muss im Projekt existieren."
+          "description": "Der Issue-Typ, zum Beispiel Task. Er muss im Projekt existieren."
         },
         "priority": {
           "name": "Priorität",
@@ -249,11 +249,11 @@
     },
     "add_comment": {
       "name": "Kommentar hinzufügen",
-      "description": "Fügt einem Ticket einen Kommentar hinzu.",
+      "description": "Fügt einem Issue einen Kommentar hinzu.",
       "fields": {
         "issue_id": {
-          "name": "Ticket-ID",
-          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+          "name": "Issue-ID",
+          "description": "Die ID des Issues, zum Beispiel DEMO-12."
         },
         "text": {
           "name": "Kommentar",
@@ -267,11 +267,11 @@
     },
     "transition": {
       "name": "Status ändern",
-      "description": "Setzt den Status eines Tickets.",
+      "description": "Setzt den Status eines Issues.",
       "fields": {
         "issue_id": {
-          "name": "Ticket-ID",
-          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+          "name": "Issue-ID",
+          "description": "Die ID des Issues, zum Beispiel DEMO-12."
         },
         "state": {
           "name": "Status",
@@ -288,12 +288,12 @@
       }
     },
     "assign": {
-      "name": "Ticket zuweisen",
-      "description": "Weist ein Ticket einem Benutzer zu oder entfernt die Zuweisung mit Unassigned.",
+      "name": "Issue zuweisen",
+      "description": "Weist ein Issue einem Benutzer zu oder entfernt die Zuweisung mit Unassigned.",
       "fields": {
         "issue_id": {
-          "name": "Ticket-ID",
-          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+          "name": "Issue-ID",
+          "description": "Die ID des Issues, zum Beispiel DEMO-12."
         },
         "assignee": {
           "name": "Bearbeiter",
@@ -307,11 +307,11 @@
     },
     "log_work": {
       "name": "Arbeit erfassen",
-      "description": "Erfasst die aufgewendete Zeit für ein Ticket.",
+      "description": "Erfasst die aufgewendete Zeit für ein Issue.",
       "fields": {
         "issue_id": {
-          "name": "Ticket-ID",
-          "description": "Die ID des Tickets, zum Beispiel DEMO-12."
+          "name": "Issue-ID",
+          "description": "Die ID des Issues, zum Beispiel DEMO-12."
         },
         "duration": {
           "name": "Dauer",
@@ -377,7 +377,7 @@
       "message": "Der Wert für {field} enthält Zeichen, die YouTrack-Befehle nicht akzeptieren."
     },
     "invalid_issue_id": {
-      "message": "{issue_id} ist keine Ticket-ID wie DEMO-12."
+      "message": "{issue_id} ist keine Issue-ID wie DEMO-12."
     },
     "invalid_duration": {
       "message": "{duration} ist keine Dauer wie 1h 30m."
@@ -401,7 +401,7 @@
       "message": "YouTrack hat die Anfrage abgelehnt. Dem Benutzer des Tokens fehlt die Berechtigung."
     },
     "not_found": {
-      "message": "YouTrack hat dieses Ticket, Projekt oder diesen Artikel nicht gefunden."
+      "message": "YouTrack hat dieses Issue, Projekt oder diesen Artikel nicht gefunden."
     },
     "rejected": {
       "message": "YouTrack hat die Anfrage abgelehnt: {reason}"
@@ -410,13 +410,13 @@
       "message": "Die Anfrage an YouTrack ist fehlgeschlagen: {error}"
     },
     "created_without_fields": {
-      "message": "Ticket {issue_id} wurde erstellt, aber Typ, Priorität oder Bearbeiter konnten nicht gesetzt werden: {error}"
+      "message": "Issue {issue_id} wurde erstellt, aber Typ, Priorität oder Bearbeiter konnten nicht gesetzt werden: {error}"
     },
     "todo_edit_unsupported": {
-      "message": "Der Text eines Tickets kann hier nicht geändert werden. Bearbeite es in YouTrack."
+      "message": "Der Text eines Issues kann hier nicht geändert werden. Bearbeite es in YouTrack."
     },
     "empty_summary": {
-      "message": "Ein Ticket braucht einen Titel."
+      "message": "Ein Issue braucht einen Titel."
     },
     "invalid_article_id": {
       "message": "Die Artikel-ID „{article_id}“ ist ungültig."
@@ -425,7 +425,7 @@
       "message": "Das Projekt „{project}“ ist in Home Assistant nicht eingerichtet."
     },
     "llm_project_required": {
-      "message": "Es sind mehrere Projekte eingerichtet; gib an, zu welchem Projekt das Ticket gehört."
+      "message": "Es sind mehrere Projekte eingerichtet; gib an, zu welchem Projekt das Issue gehört."
     }
   },
   "issues": {
