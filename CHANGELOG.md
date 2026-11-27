@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-11-27
+
 ### Added
 
 - A query sensor can list every matching issue in its attributes: enter `0` as the limit. The limit is now
