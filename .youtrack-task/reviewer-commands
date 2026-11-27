@@ -1,0 +1,4 @@
+# Commands the read-only youtrack-task reviewer may run, one per line, matched exactly.
+/Users/jeffry/Projects/ha-youtrack/.venv/bin/pytest -q
+/Users/jeffry/Projects/ha-youtrack/.venv/bin/ruff check .
+/Users/jeffry/Projects/ha-youtrack/.venv/bin/mypy custom_components
