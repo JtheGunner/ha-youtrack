@@ -8,6 +8,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.youtrack import CACHE_MAX_AGE
@@ -164,6 +165,34 @@ async def test_reload_reads_only_what_changed(
     assert len(mock_project_entry.runtime_data.coordinators["sub-demo"].data.open_issues) > 0
 
 
+async def test_reload_keeps_every_entity_id(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """The entities of a reloaded entry are the same ones, with the same ids and states."""
+    mock_project_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_project_entry.entry_id)
+    await hass.async_block_till_done()
+    before = {
+        entity.entity_id: entity.unique_id
+        for entity in er.async_entries_for_config_entry(
+            er.async_get(hass), mock_project_entry.entry_id
+        )
+    }
+    states = {state.entity_id: state.state for state in hass.states.async_all()}
+    assert before
+
+    await hass.config_entries.async_reload(mock_project_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert {
+        entity.entity_id: entity.unique_id
+        for entity in er.async_entries_for_config_entry(
+            er.async_get(hass), mock_project_entry.entry_id
+        )
+    } == before
+    assert {state.entity_id: state.state for state in hass.states.async_all()} == states
+
+
 async def test_reload_reads_everything_again_after_a_long_pause(
     hass: HomeAssistant,
     mock_client: MagicMock,
@@ -177,6 +206,24 @@ async def test_reload_reads_everything_again_after_a_long_pause(
     await hass.config_entries.async_unload(mock_project_entry.entry_id)
 
     freezer.tick(CACHE_MAX_AGE + timedelta(minutes=10))
+    await hass.config_entries.async_setup(mock_project_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert _full_loads(mock_client) == 2
+
+
+async def test_new_token_never_sees_issues_read_with_the_old_one(
+    hass: HomeAssistant, mock_client: MagicMock, mock_project_entry: MockConfigEntry
+) -> None:
+    """A different token may be allowed to see other issues, so nothing is carried over."""
+    mock_project_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_project_entry.entry_id)
+    await hass.async_block_till_done()
+    await hass.config_entries.async_unload(mock_project_entry.entry_id)
+    hass.config_entries.async_update_entry(
+        mock_project_entry, data={**mock_project_entry.data, "api_token": "perm:other"}
+    )
+
     await hass.config_entries.async_setup(mock_project_entry.entry_id)
     await hass.async_block_till_done()
 
@@ -212,7 +259,7 @@ async def test_removing_the_entry_forgets_its_cache(
     mock_project_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(mock_project_entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.data[DOMAIN][mock_project_entry.entry_id]
+    assert hass.data[DOMAIN][mock_project_entry.entry_id].caches
 
     if remove:
         await hass.config_entries.async_remove(mock_project_entry.entry_id)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import partial
 from typing import TYPE_CHECKING
@@ -53,7 +54,19 @@ CACHE_MAX_AGE = timedelta(hours=1)
 
 # The issue caches of each entry by project id; they outlive a reload so it need not read every
 # issue again.
-_ISSUE_CACHES: HassKey[dict[str, dict[str, IssueCache]]] = HassKey(DOMAIN)
+_ISSUE_CACHES: HassKey[dict[str, _KeptCaches]] = HassKey(DOMAIN)
+
+
+@dataclass
+class _KeptCaches:
+    """The issue caches of one entry, valid only for the credentials they were filled with.
+
+    A token may see other issues than its predecessor, so a cache never outlives a token change.
+    """
+
+    credentials: tuple[str, str]
+    caches: dict[str, IssueCache] = field(default_factory=dict)
+
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -147,7 +160,11 @@ def _issue_cache(
     hass: HomeAssistant, entry: YouTrackConfigEntry, subentry: ConfigSubentry
 ) -> IssueCache:
     """Return the issue cache of a project, reusing the one of a previous load if still good."""
-    caches = hass.data.setdefault(_ISSUE_CACHES, {}).setdefault(entry.entry_id, {})
+    credentials = (entry.data[CONF_URL], entry.data[CONF_API_TOKEN])
+    kept = hass.data.setdefault(_ISSUE_CACHES, {}).get(entry.entry_id)
+    if kept is None or kept.credentials != credentials:
+        kept = hass.data[_ISSUE_CACHES][entry.entry_id] = _KeptCaches(credentials)
+    caches = kept.caches
     project_id: str = subentry.data[CONF_PROJECT_ID]
     project_key: str = subentry.data[CONF_PROJECT_KEY]
     client = entry.runtime_data.client
