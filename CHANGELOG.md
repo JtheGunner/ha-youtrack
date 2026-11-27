@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A query sensor can list every matching issue in its attributes: enter `0` as the limit. The limit is now
+  accepted up to 500 instead of 25, and the sensor state still shows the real number of matches.
+
+### Fixed
+
+- Entering a number outside the allowed range for the issue limit of a query sensor or for the update interval
+  now shows a message in the language of the interface instead of an English one from Home Assistant.
+
 ## [1.1.9] - 2026-11-27
 
 ### Changed

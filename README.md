@@ -224,8 +224,13 @@ travel to your conversation agent, so mind where it runs if your issues are conf
 
 Open the project in **Settings → Devices & services → YouTrack**, choose **⋮ → Manage query sensors**
 and add a named YouTrack search such as `#Unresolved for: me`. The sensor shows the number of matching
-issues; its attributes list the first issues (default 10, at most 25) with id, summary, state, priority,
-assignee and link. The query is limited to the project automatically.
+issues; its attributes list the first issues (default 10, up to 500) with id, summary, state, priority,
+assignee and link. Enter `0` as the limit to list every matching issue, up to 500. The state always shows
+the real number of matches. The query is limited to the project automatically.
+
+> [!NOTE]
+> Home Assistant does not store the attributes of an entity in its history once they exceed 16 KB, so a
+> sensor that lists several hundred issues keeps its state history but loses the attribute history.
 
 > [!NOTE]
 > YouTrack validates the syntax when you save, but accepts some unknown field names and simply matches

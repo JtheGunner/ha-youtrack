@@ -80,7 +80,7 @@
             "top": "Issues in den Attributen"
           },
           "data_description": {
-            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden."
+            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden, von {min} bis {max}. 0 listet alle auf (höchstens {max})."
           }
         },
         "edit_query": {
@@ -98,7 +98,7 @@
             "top": "Issues in den Attributen"
           },
           "data_description": {
-            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden."
+            "top": "Wie viele passende Issues in den Sensor-Attributen aufgelistet werden, von {min} bis {max}. 0 listet alle auf (höchstens {max})."
           }
         },
         "remove_query": {
@@ -127,7 +127,8 @@
         "no_project_selected": "Wähle mindestens ein Projekt zum Hinzufügen aus.",
         "invalid_query": "YouTrack hat die Abfrage abgelehnt: {error}",
         "cannot_validate": "Die Abfrage konnte nicht geprüft werden: {error}",
-        "nothing_selected": "Wähle mindestens einen Abfrage-Sensor zum Entfernen aus."
+        "nothing_selected": "Wähle mindestens einen Abfrage-Sensor zum Entfernen aus.",
+        "top_out_of_range": "Gib eine Zahl von {min} bis {max} ein. 0 listet alle passenden Issues auf."
       }
     }
   },
@@ -150,6 +151,9 @@
           "llm_create": "Assist-Konversationsagenten, die die YouTrack-API nutzen, können Issues und Artikel suchen. Aktiviere dies, damit sie auch Issues anlegen dürfen."
         }
       }
+    },
+    "error": {
+      "scan_interval_out_of_range": "Gib eine Anzahl Minuten von {min} bis {max} ein."
     }
   },
   "entity": {

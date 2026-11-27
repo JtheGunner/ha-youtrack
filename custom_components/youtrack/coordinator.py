@@ -12,6 +12,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .api import PAGE_SIZE
 from .const import (
     CONF_PROJECT_ID,
     CONF_PROJECT_KEY,
@@ -22,7 +23,9 @@ from .const import (
     DOMAIN,
     DUE_DATE_FIELD_NAMES,
     EVENT_PREFIX,
+    MAX_QUERY_TOP,
     MAX_WATCHED,
+    QUERY_TOP_ALL,
     WATCH_QUERY_ID,
 )
 from .exceptions import (
@@ -102,6 +105,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         self._field_names: set[str] | None = None
         self._due_field: str | None = None
         self._invalid_queries: set[str] = set()
+        self._capped_queries: set[str] = set()
         self._feed = entry.runtime_data.feed
         self._event_sequence: int | None = None
         self._cache = cache
@@ -199,7 +203,7 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
         text = query.build(self.project_key)
         try:
             count, issues = await asyncio.gather(
-                self._client.count_issues(text), self._client.get_issues(text, top=query.top)
+                self._client.count_issues(text), self._get_listed_issues(text, query.top)
             )
         except YouTrackInvalidQueryError as err:
             if query.id not in self._invalid_queries:
@@ -214,7 +218,35 @@ class YouTrackProjectCoordinator(DataUpdateCoordinator[ProjectData]):
             return None
         if count is None:
             return None
+        if (
+            query.top == QUERY_TOP_ALL
+            and count > len(issues)
+            and query.id not in self._capped_queries
+        ):
+            self._capped_queries.add(query.id)
+            _LOGGER.warning(
+                "The custom query %s for %s matches %s issues, but only the first %s are listed "
+                "in the sensor attributes",
+                query.name,
+                self.project_key,
+                count,
+                len(issues),
+            )
         return QueryResult(count=count, issues=tuple(issues))
+
+    async def _get_listed_issues(self, text: str, top: int) -> list[Issue]:
+        """Return the issues a query sensor lists: ``top`` of them, or every match up to the cap."""
+        if top != QUERY_TOP_ALL:
+            return await self._client.get_issues(text, top=top)
+        issues: list[Issue] = []
+        while len(issues) < MAX_QUERY_TOP:
+            page = await self._client.get_issues(
+                text, top=min(PAGE_SIZE, MAX_QUERY_TOP - len(issues)), skip=len(issues)
+            )
+            issues.extend(page)
+            if len(page) < PAGE_SIZE:
+                break
+        return issues
 
     async def _async_update_data(self) -> ProjectData:
         """Fetch all supported counts of the project."""
